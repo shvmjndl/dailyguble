@@ -59,7 +59,9 @@ function buildSite(rawIssue, assets) {
     icons: assets.manifest.icons.map((i) => Object.assign({}, i, { src: i.src.replace(/^\//, '') }))
   });
   const fonts = assets.fonts || { href: '', list: '' };
-  const index = fill(assets.template, { TITLE: plainTitle(issue), ISSUE: scriptSafe(JSON.stringify(issue)), CSP: escapeHtml(SITE_CSP), V: version, FONTS: escapeHtml(fonts.href), FONTLIST: escapeHtml(fonts.list) });
+  // link previews need a full address for the image; fall back to a relative one
+  const ogImage = assets.siteUrl ? assets.siteUrl.replace(/\/+$/, '') + '/og-image.png' : 'og-image.png';
+  const index = fill(assets.template, { TITLE: plainTitle(issue), ISSUE: scriptSafe(JSON.stringify(issue)), CSP: escapeHtml(SITE_CSP), V: version, FONTS: escapeHtml(fonts.href), FONTLIST: escapeHtml(fonts.list), OG_IMAGE: escapeHtml(ogImage) });
   const headers = [
     '/*',
     '  X-Content-Type-Options: nosniff',
@@ -91,6 +93,7 @@ function buildSite(rawIssue, assets) {
     { path: 'icon-192.png', data: assets.icon192 },
     { path: 'icon-512.png', data: assets.icon512 },
     { path: 'apple-touch-icon.png', data: assets.appleIcon },
+    ...(assets.ogImage ? [{ path: 'og-image.png', data: assets.ogImage }] : []),
     { path: '_headers', data: Buffer.from(headers) },       // Cloudflare Pages and Netlify read this
     { path: '.nojekyll', data: Buffer.from('') }             // GitHub Pages: serve files as they are
   ].concat(images);

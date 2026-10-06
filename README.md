@@ -1,3 +1,5 @@
+<p align="center"><img src="brand/guble-wordmark.svg" alt="The Daily Guble" width="440"></p>
+
 # The Daily Guble
 
 A newspaper website that looks and feels like a real paper. Readers turn the pages

@@ -265,7 +265,8 @@ const PUBLIC_ASSETS = {
   '/manifest.webmanifest': asset(read('public/manifest.webmanifest'), 'application/manifest+json; charset=utf-8'),
   '/icon-192.png': asset(readBin('public/icon-192.png'), 'image/png'),
   '/icon-512.png': asset(readBin('public/icon-512.png'), 'image/png'),
-  '/apple-touch-icon.png': asset(readBin('public/apple-touch-icon.png'), 'image/png')
+  '/apple-touch-icon.png': asset(readBin('public/apple-touch-icon.png'), 'image/png'),
+  '/og-image.png': asset(readBin('public/og-image.png'), 'image/png')
 };
 const ADMIN_ASSETS = {
   '/admin/editor.css': asset(read('admin/editor.css'), 'text/css; charset=utf-8'),
@@ -298,6 +299,7 @@ function siteFiles() {
   return buildSite(live.issue, {
     fonts: fontInfo(live.issue), template: VIEWS.site, readerJs: PUBLIC_ASSETS['/paper.js'].body, paperCss: PUBLIC_ASSETS['/paper.css'].body,
     favicon: PUBLIC_ASSETS['/favicon.svg'].body, manifest: JSON.parse(PUBLIC_ASSETS['/manifest.webmanifest'].body),
+    siteUrl: SITE_URL, ogImage: PUBLIC_ASSETS['/og-image.png'].body,
     icon192: PUBLIC_ASSETS['/icon-192.png'].body, icon512: PUBLIC_ASSETS['/icon-512.png'].body, appleIcon: PUBLIC_ASSETS['/apple-touch-icon.png'].body
   });
 }
@@ -453,7 +455,7 @@ async function route(req, res) {
   if (m === 'GET' || m === 'HEAD') {
     if (p === '/') {
       const f = fontInfo(live.issue);
-      return sendHtml(res, fill(VIEWS.reader, { TITLE: paperTitle(), ISSUE: scriptSafe(live.json), FONTS: escapeHtml(f.href), FONTLIST: escapeHtml(f.list) }));
+      return sendHtml(res, fill(VIEWS.reader, { TITLE: paperTitle(), ISSUE: scriptSafe(live.json), FONTS: escapeHtml(f.href), FONTLIST: escapeHtml(f.list), OG_IMAGE: '/og-image.png' }));
     }
     if (PUBLIC_ASSETS[p]) return sendAsset(req, res, PUBLIC_ASSETS[p], 'no-cache');
     if (p === '/admin' || p === '/admin/') {

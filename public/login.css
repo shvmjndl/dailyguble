@@ -45,3 +45,4 @@ body{margin:0;background:#231f1a;color:#e8e0cf;font-family:var(--f-util)}
 .pass-error{min-height:1.4em;color:var(--press-red);font-weight:600;text-align:left}
 .pass-go[disabled]{opacity:.6;cursor:default}
 .pass-alt{text-align:center;display:block}
+.pass-logo{display:block;margin:0 auto -4px;width:72px;height:72px}

@@ -241,7 +241,7 @@ function logout(){
 function buildPanel(){
   panel = el('aside', 'ed'); panel.setAttribute('aria-label', 'Newsroom editor');
   panel.innerHTML =
-    '<header class="ed-head"><div class="ed-title"><b>Newsroom</b><span class="ed-chip" id="edChip"></span></div>' +
+    '<header class="ed-head"><div class="ed-brand"><img src="/favicon.svg" alt="" width="34" height="34"><div class="ed-title"><b>Newsroom</b><span class="ed-chip" id="edChip"></span></div></div>' +
     '<div class="ed-actions"><button class="ed-btn ghost small" id="edPeek" type="button">Preview</button>' +
     '<button class="ed-btn primary" id="edPub" type="button">Publish edition</button></div></header>' +
     '<div class="ed-tabs" role="tablist">' +
