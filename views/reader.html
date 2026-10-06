@@ -27,7 +27,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{{FONTS}}" data-fonts="{{FONTLIST}}">
 <link rel="stylesheet" href="/paper.css">
-<script src="/paper.js" defer></script>
+{{NEWS_PRELOAD}}
+<script src="/paper.js" defer fetchpriority="high"></script>
 </head>
 <body>
 <script type="application/json" id="issue-data">{{ISSUE}}</script>

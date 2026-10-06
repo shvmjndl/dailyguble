@@ -180,6 +180,8 @@ function useExactLocation(done){
 /* ---------- everything for today ---------- */
 function weatherCacheFor(loc){ return cached('weather:' + loc.lat.toFixed(3) + ',' + loc.lon.toFixed(3) + ':' + loc.units, 6 * 3600000); }
 var almanacJob = 0;
+/* Does the edition print tides anywhere? Only then are they fetched. */
+function usesTides(issue){ var j = JSON.stringify((issue && issue.pages) || []).concat(JSON.stringify((issue && issue.masthead) || {})); return /"type":"tides"|\{\{\s*(?:highWater|lowWater)/.test(j); }
 function loadAlmanac(issue, onUpdate){
   var paper = locationOf(issue), job = ++almanacJob, tz = deviceTimeZone(paper.timeZone);
   var day = datePartsIn(new Date(), tz), tideDay = datePartsIn(new Date(), paper.timeZone);
@@ -187,7 +189,7 @@ function loadAlmanac(issue, onUpdate){
   var A = {
     date: day.y + '-' + pad2(day.m) + '-' + pad2(day.d), timeZone: tz,
     moon: moonOn(Date.UTC(day.y, day.m - 1, day.d, 12)),
-    tideStation: paper.tideStation || null, tideTimeZone: paper.timeZone, tides: [], tideError: null,
+    tideStation: usesTides(issue) ? paper.tideStation || null : null, tideTimeZone: paper.timeZone, tides: [], tideError: null,
     weather: null, weatherError: null, loadedAt: Date.now()
   };
   /* Sun and weather follow the reader's place once known; until then, the paper's town. */
@@ -215,11 +217,12 @@ function loadAlmanac(issue, onUpdate){
   }
   if (A.tideStation) fetchTides(A.tideStation, tideDay).then(function(t){ A.tides = t; A.tideError = null; done(); },
     function(){ if (!A.tides.length) A.tideError = 'Tide predictions are unavailable right now.'; done(); });
-  weatherFor(here);
+  // the reader's own place when it's known; the paper's town only if theirs can't be found
+  if (A.placeSource !== 'paper') weatherFor(here);
   findReaderPlace().then(function(p){
     if (job !== almanacJob) return;
     if (p.lat === A.lat && p.lon === A.lon && A.placeSource !== 'paper') return;   // already showing this place
     weatherFor(placeAt(p)); done();
-  }, function(){ /* keep the paper's town */ });
+  }, function(){ if (job === almanacJob && A.placeSource === 'paper') weatherFor(here); });
   return A;
 }

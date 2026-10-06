@@ -1815,6 +1815,7 @@ function showStory(i){
   if (s.page !== idx) { idx = s.page; zoom = 1; panX = 0; panY = 0; apply(); paint(); }
 }
 function openReader(node){
+  ensureBuilt(N - 1);                             // the reader goes through the whole paper
   RD.list = storyNodes();
   if (!RD.list.length) return;
   var i = node ? Math.max(0, storyIndexOf(node)) : 0;
@@ -1947,20 +1948,43 @@ function buildSheets(issue){
   var pages = clipOrder(issue.pages || []), m = issue.masthead || {};     // clipped pages come first
   NEWS.pages = pages;
   NEWS.fontsPending = !!(document.fonts && document.fonts.status !== 'loaded');
-  // one page at a time: each news page is fitted before the next picks its stories
-  sheets = pages.map(function(p, i){
-    var s = renderPage(p, i, pages.length, m, issue);
-    book.appendChild(s);
-    if (p.news) fitNewsSheet(s);
-    decoratePageClip(s, p, i);
-    applyLive(s);
-    return s;
-  });
+  BUILD = { gen: BUILD.gen + 1, next: 0, pages: pages, m: m, issue: issue };
+  // a blank sheet for every page first; pages are drawn in order (each news page is fitted
+  // before the next picks its stories), the page being read straight away and the rest
+  // one per background step, so the phone never freezes for long
+  sheets = pages.map(function(){ var s = el('div', 'sheet pending', '<div class="face"><div class="paper"></div></div>'); book.appendChild(s); return s; });
   N = sheets.length;
   idx = Math.max(0, Math.min(idx, N - 1));
   dots.innerHTML = '';
   for (var d = 0; d < N; d++) dots.appendChild(document.createElement('b'));
+  ensureBuilt(hooks.lazyPages ? idx : N - 1);
   paint();
+  if (BUILD.next < N) schedulePages(BUILD.gen);
+}
+var BUILD = { gen: 0, next: 0, pages: [], m: {}, issue: null };
+function buildPageAt(i){
+  var p = BUILD.pages[i], s = renderPage(p, i, BUILD.pages.length, BUILD.m, BUILD.issue);
+  sheets[i].replaceWith(s); sheets[i] = s;
+  if (p.news) fitNewsSheet(s);
+  decoratePageClip(s, p, i);
+  applyLive(s);
+}
+/* Draw every page up to and including k (in order), now. */
+function ensureBuilt(k){
+  k = Math.min(k, N - 1);
+  if (BUILD.next > k) return;
+  while (BUILD.next <= k) buildPageAt(BUILD.next++);
+  if (book) paint();
+}
+function schedulePages(gen){
+  var later = window.requestIdleCallback ? function(f){ requestIdleCallback(f, { timeout: 250 }); } : function(f){ setTimeout(f, 16); };
+  later(function(){
+    if (gen !== BUILD.gen || BUILD.next >= N) return;
+    var t0 = performance.now();
+    do { buildPageAt(BUILD.next++); } while (BUILD.next < N && performance.now() - t0 < 8);
+    paint();
+    if (BUILD.next < N) schedulePages(gen);
+  });
 }
 function pageH(){ return folded ? FOLD_H : PAGE_H; }
 function clampPan(){
@@ -1985,6 +2009,7 @@ function measure(){
   apply();
 }
 function paint(){
+  if (DAILY.openGate && sheets[idx] && sheets[idx].querySelector('.pz, .pz-daily')) DAILY.openGate();   // on the puzzles page: fetch their words now
   sheets.forEach(function(sh, i){
     sh.classList.toggle('turned', i < idx);
     sh.classList.toggle('buried', i > idx + 1);
@@ -2001,6 +2026,7 @@ function paint(){
 function go(step){
   var t = Math.min(N - 1, Math.max(0, idx + step));
   if (t === idx) return;
+  ensureBuilt(t);
   PZ.release();
   if (Math.abs(t - idx) === 1 && animateTurn(t - idx)) return;
   finishCurl();
@@ -2023,7 +2049,8 @@ function focusOn(node){
   var s = fit * zoom, face = sheets[idx] && sheets[idx].firstChild; if (!face) return;
   var nr = node.getBoundingClientRect(), fr = face.getBoundingClientRect();
   if (nr.width >= Math.min(stage.clientWidth * 0.8, 440)) return;
-  var x = (nr.left - fr.left) / s, y = (nr.top - fr.top) / s, w = nr.width / s, h = Math.min(nr.height / s, w * 1.25);
+  // grids are shown square-ish; the word game shows whole, keyboard included
+  var x = (nr.left - fr.left) / s, y = (nr.top - fr.top) / s, w = nr.width / s, h = node.classList.contains('pz-wd') ? nr.height / s : Math.min(nr.height / s, w * 1.25);
   zoom = Math.max(1, Math.min(maxZoom(), (stage.clientWidth * 0.94) / (w * fit), (stage.clientHeight * 0.94) / (h * fit)));
   panX = -(x + w / 2 - PAGE_W / 2) * fit * zoom;
   panY = -(y + h / 2 - pageH() / 2) * fit * zoom;
@@ -2108,6 +2135,7 @@ function pageCoords(x, y){
 }
 /* dir 'fwd' turns the sheet away; 'back' brings an already-turned sheet back. */
 function startCurl(sheet, dir, corner){
+  ensureBuilt(sheets.indexOf(sheet) + 1);           // the page underneath must be drawn
   var H = pageH(), Cy = corner === 'top' ? 0 : H;
   var C = { x: PAGE_W, y: Cy }, home = dir === 'fwd' ? { x: C.x, y: C.y } : { x: -PAGE_W, y: Cy };
   var E = curlLayer();
@@ -2401,7 +2429,7 @@ function loadNews(onUpdate, withFiltered){
     }
   }
   NEWS.loading = true;
-  var q = '?h=' + hour + (withFiltered ? '&include=filtered' : ''), parts = [];
+  var q = withFiltered ? '?include=filtered&h=' + hour : '', parts = [];      // the page preloads these same addresses
   for (var k = 0; k < NEWS_ENGINE.PARTS; k++) parts.push(getJSONNews(NEWS_API + '/' + k + q).catch(function(){ return null; }));
   Promise.all([Promise.all(parts), getJSONNews(NEWS_API + '/extras' + q).catch(function(){ return null; })]).then(function(r){
     NEWS.loading = false; NEWS.hour = hour;
@@ -2723,8 +2751,12 @@ var SAFE = NEWS_ENGINE.makeFilter({});
 function isSafeWord(w){ return SAFE({ title: w, summary: '', outlet: '', id: '' }).action === 'keep'; }
 function dayKey(){ return ymdKey(todayParts()); }
 
+/* Puzzle downloads wait until the news is in: until the puzzles page is opened, or a few seconds after load. */
+function puzzleGate(){
+  return DAILY.gate || (DAILY.gate = new Promise(function(r){ var t = setTimeout(r, 3500); DAILY.openGate = function(){ clearTimeout(t); r(); }; }));
+}
 function loadWords(){
-  return DAILY.wordsP || (DAILY.wordsP = fetch('/words.txt').then(function(r){
+  return DAILY.wordsP || (DAILY.wordsP = puzzleGate().then(function(){ return fetch('/words.txt'); }).then(function(r){
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.text();
   }).then(NEWS_ENGINE.parseWordList).catch(function(e){ DAILY.wordsP = null; throw e; }));
@@ -2741,7 +2773,7 @@ function loadDayFeed(){
   if (saved && saved.day === day) return (DAILY.feedP[day] = Promise.resolve(saved));
   function get(d){ return fetch(WIKI_FEATURED + d.replace(/-/g, '/')).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }); }
   var t = todayParts(), prev = new Date(Date.UTC(t.y, t.m - 1, t.d - 1)).toISOString().slice(0, 10);
-  return (DAILY.feedP[day] = get(day).catch(function(){ return get(prev); }).then(function(f){
+  return (DAILY.feedP[day] = puzzleGate().then(function(){ return get(day); }).catch(function(){ return get(prev); }).then(function(f){
     var texts = [], page = function(a){ return a && a.content_urls ? a.content_urls.desktop.page : null; };
     if (f.tfa) texts.push({ src: 'tfa', text: f.tfa.extract, title: f.tfa.titles ? f.tfa.titles.normalized : '', link: page(f.tfa) });
     (f.news || []).forEach(function(n){ texts.push({ src: 'news', text: stripTags(n.story), title: n.links && n.links[0] ? n.links[0].titles.normalized : '', link: page(n.links && n.links[0]) }); });
@@ -2767,10 +2799,16 @@ function dailySudoku(){
 function getClues(words){
   return fetch('/api/clues?w=' + words.join(',')).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
 }
-/* cb(config for Crossword(), or null). Cached for the day once every clue is in. */
+/* cb(config for Crossword(), or null). One build per day, shared by every redraw; saved once every clue is in. */
 function dailyMini(cb){
   var day = dayKey(), saved = store('mini');
   if (saved && saved.v === 1 && saved.day === day) { cb(saved.cfg); return; }
+  if (DAILY.mini && DAILY.mini.day === day) { DAILY.mini.p.then(cb); return; }
+  var resolve, p = new Promise(function(r){ resolve = r; });
+  DAILY.mini = { day: day, p: p };
+  p.then(function(cfg){ if (!cfg && DAILY.mini && DAILY.mini.p === p) DAILY.mini = null; });   // a failed build can be tried again
+  p.then(cb);
+  cb = resolve;
   Promise.all([loadWords(), loadDayFeed().catch(function(){ return { texts: [] }; })]).then(function(r){
     var W = r[0], texts = r[1].texts, banned = new Set(), rounds = 0;
     (function attempt(){
@@ -3274,6 +3312,8 @@ function useExactLocation(done){
 /* ---------- everything for today ---------- */
 function weatherCacheFor(loc){ return cached('weather:' + loc.lat.toFixed(3) + ',' + loc.lon.toFixed(3) + ':' + loc.units, 6 * 3600000); }
 var almanacJob = 0;
+/* Does the edition print tides anywhere? Only then are they fetched. */
+function usesTides(issue){ var j = JSON.stringify((issue && issue.pages) || []).concat(JSON.stringify((issue && issue.masthead) || {})); return /"type":"tides"|\{\{\s*(?:highWater|lowWater)/.test(j); }
 function loadAlmanac(issue, onUpdate){
   var paper = locationOf(issue), job = ++almanacJob, tz = deviceTimeZone(paper.timeZone);
   var day = datePartsIn(new Date(), tz), tideDay = datePartsIn(new Date(), paper.timeZone);
@@ -3281,7 +3321,7 @@ function loadAlmanac(issue, onUpdate){
   var A = {
     date: day.y + '-' + pad2(day.m) + '-' + pad2(day.d), timeZone: tz,
     moon: moonOn(Date.UTC(day.y, day.m - 1, day.d, 12)),
-    tideStation: paper.tideStation || null, tideTimeZone: paper.timeZone, tides: [], tideError: null,
+    tideStation: usesTides(issue) ? paper.tideStation || null : null, tideTimeZone: paper.timeZone, tides: [], tideError: null,
     weather: null, weatherError: null, loadedAt: Date.now()
   };
   /* Sun and weather follow the reader's place once known; until then, the paper's town. */
@@ -3309,12 +3349,13 @@ function loadAlmanac(issue, onUpdate){
   }
   if (A.tideStation) fetchTides(A.tideStation, tideDay).then(function(t){ A.tides = t; A.tideError = null; done(); },
     function(){ if (!A.tides.length) A.tideError = 'Tide predictions are unavailable right now.'; done(); });
-  weatherFor(here);
+  // the reader's own place when it's known; the paper's town only if theirs can't be found
+  if (A.placeSource !== 'paper') weatherFor(here);
   findReaderPlace().then(function(p){
     if (job !== almanacJob) return;
     if (p.lat === A.lat && p.lon === A.lon && A.placeSource !== 'paper') return;   // already showing this place
     weatherFor(placeAt(p)); done();
-  }, function(){ /* keep the paper's town */ });
+  }, function(){ if (job === almanacJob && A.placeSource === 'paper') weatherFor(here); });
   return A;
 }
 
@@ -3325,6 +3366,7 @@ wireView();
 wireClips();                            // readers can clip pages, like a real paper
 wireNight();                            // dark newsprint after sunset
 hooks.issue = function(){ return ISSUE; };
+hooks.lazyPages = true;                 // draw the page being read first, the rest in the background
 hooks.rerender = function(){ buildSheets(ISSUE); measure(); };
 loadAlmanac(ISSUE, function(){ liveUpdated(); updateNight(); });   // date, sun and moon now; tides and weather as they arrive
 /* The news: shown as soon as it's here, refreshed when the hour turns, never while someone is reading. */

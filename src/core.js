@@ -1107,6 +1107,7 @@ function showStory(i){
   if (s.page !== idx) { idx = s.page; zoom = 1; panX = 0; panY = 0; apply(); paint(); }
 }
 function openReader(node){
+  ensureBuilt(N - 1);                             // the reader goes through the whole paper
   RD.list = storyNodes();
   if (!RD.list.length) return;
   var i = node ? Math.max(0, storyIndexOf(node)) : 0;
@@ -1239,20 +1240,43 @@ function buildSheets(issue){
   var pages = clipOrder(issue.pages || []), m = issue.masthead || {};     // clipped pages come first
   NEWS.pages = pages;
   NEWS.fontsPending = !!(document.fonts && document.fonts.status !== 'loaded');
-  // one page at a time: each news page is fitted before the next picks its stories
-  sheets = pages.map(function(p, i){
-    var s = renderPage(p, i, pages.length, m, issue);
-    book.appendChild(s);
-    if (p.news) fitNewsSheet(s);
-    decoratePageClip(s, p, i);
-    applyLive(s);
-    return s;
-  });
+  BUILD = { gen: BUILD.gen + 1, next: 0, pages: pages, m: m, issue: issue };
+  // a blank sheet for every page first; pages are drawn in order (each news page is fitted
+  // before the next picks its stories), the page being read straight away and the rest
+  // one per background step, so the phone never freezes for long
+  sheets = pages.map(function(){ var s = el('div', 'sheet pending', '<div class="face"><div class="paper"></div></div>'); book.appendChild(s); return s; });
   N = sheets.length;
   idx = Math.max(0, Math.min(idx, N - 1));
   dots.innerHTML = '';
   for (var d = 0; d < N; d++) dots.appendChild(document.createElement('b'));
+  ensureBuilt(hooks.lazyPages ? idx : N - 1);
   paint();
+  if (BUILD.next < N) schedulePages(BUILD.gen);
+}
+var BUILD = { gen: 0, next: 0, pages: [], m: {}, issue: null };
+function buildPageAt(i){
+  var p = BUILD.pages[i], s = renderPage(p, i, BUILD.pages.length, BUILD.m, BUILD.issue);
+  sheets[i].replaceWith(s); sheets[i] = s;
+  if (p.news) fitNewsSheet(s);
+  decoratePageClip(s, p, i);
+  applyLive(s);
+}
+/* Draw every page up to and including k (in order), now. */
+function ensureBuilt(k){
+  k = Math.min(k, N - 1);
+  if (BUILD.next > k) return;
+  while (BUILD.next <= k) buildPageAt(BUILD.next++);
+  if (book) paint();
+}
+function schedulePages(gen){
+  var later = window.requestIdleCallback ? function(f){ requestIdleCallback(f, { timeout: 250 }); } : function(f){ setTimeout(f, 16); };
+  later(function(){
+    if (gen !== BUILD.gen || BUILD.next >= N) return;
+    var t0 = performance.now();
+    do { buildPageAt(BUILD.next++); } while (BUILD.next < N && performance.now() - t0 < 8);
+    paint();
+    if (BUILD.next < N) schedulePages(gen);
+  });
 }
 function pageH(){ return folded ? FOLD_H : PAGE_H; }
 function clampPan(){
@@ -1277,6 +1301,7 @@ function measure(){
   apply();
 }
 function paint(){
+  if (DAILY.openGate && sheets[idx] && sheets[idx].querySelector('.pz, .pz-daily')) DAILY.openGate();   // on the puzzles page: fetch their words now
   sheets.forEach(function(sh, i){
     sh.classList.toggle('turned', i < idx);
     sh.classList.toggle('buried', i > idx + 1);
@@ -1293,6 +1318,7 @@ function paint(){
 function go(step){
   var t = Math.min(N - 1, Math.max(0, idx + step));
   if (t === idx) return;
+  ensureBuilt(t);
   PZ.release();
   if (Math.abs(t - idx) === 1 && animateTurn(t - idx)) return;
   finishCurl();
@@ -1315,7 +1341,8 @@ function focusOn(node){
   var s = fit * zoom, face = sheets[idx] && sheets[idx].firstChild; if (!face) return;
   var nr = node.getBoundingClientRect(), fr = face.getBoundingClientRect();
   if (nr.width >= Math.min(stage.clientWidth * 0.8, 440)) return;
-  var x = (nr.left - fr.left) / s, y = (nr.top - fr.top) / s, w = nr.width / s, h = Math.min(nr.height / s, w * 1.25);
+  // grids are shown square-ish; the word game shows whole, keyboard included
+  var x = (nr.left - fr.left) / s, y = (nr.top - fr.top) / s, w = nr.width / s, h = node.classList.contains('pz-wd') ? nr.height / s : Math.min(nr.height / s, w * 1.25);
   zoom = Math.max(1, Math.min(maxZoom(), (stage.clientWidth * 0.94) / (w * fit), (stage.clientHeight * 0.94) / (h * fit)));
   panX = -(x + w / 2 - PAGE_W / 2) * fit * zoom;
   panY = -(y + h / 2 - pageH() / 2) * fit * zoom;
@@ -1400,6 +1427,7 @@ function pageCoords(x, y){
 }
 /* dir 'fwd' turns the sheet away; 'back' brings an already-turned sheet back. */
 function startCurl(sheet, dir, corner){
+  ensureBuilt(sheets.indexOf(sheet) + 1);           // the page underneath must be drawn
   var H = pageH(), Cy = corner === 'top' ? 0 : H;
   var C = { x: PAGE_W, y: Cy }, home = dir === 'fwd' ? { x: C.x, y: C.y } : { x: -PAGE_W, y: Cy };
   var E = curlLayer();

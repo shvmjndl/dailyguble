@@ -68,7 +68,8 @@ function buildSite(rawIssue, assets) {
   const fonts = assets.fonts || { href: '', list: '' };
   // link previews need a full address for the image; fall back to a relative one
   const ogImage = assets.siteUrl ? assets.siteUrl.replace(/\/+$/, '') + '/og-image.png' : 'og-image.png';
-  const index = fill(assets.template, { TITLE: plainTitle(issue), ISSUE: scriptSafe(JSON.stringify(issue)), CSP: escapeHtml(SITE_CSP), V: version, FONTS: escapeHtml(fonts.href), FONTLIST: escapeHtml(fonts.list), OG_IMAGE: escapeHtml(ogImage) });
+  const preload = (assets.newsPreload || []).map((u) => `<link rel="preload" href="${u.replace(/^\//, '')}" as="fetch" crossorigin fetchpriority="low">`).join('\n');
+  const index = fill(assets.template, { NEWS_PRELOAD: preload, TITLE: plainTitle(issue), ISSUE: scriptSafe(JSON.stringify(issue)), CSP: escapeHtml(SITE_CSP), V: version, FONTS: escapeHtml(fonts.href), FONTLIST: escapeHtml(fonts.list), OG_IMAGE: escapeHtml(ogImage) });
   const headers = [
     '/*',
     '  X-Content-Type-Options: nosniff',

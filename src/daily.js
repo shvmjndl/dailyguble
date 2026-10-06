@@ -10,8 +10,12 @@ var SAFE = NEWS_ENGINE.makeFilter({});
 function isSafeWord(w){ return SAFE({ title: w, summary: '', outlet: '', id: '' }).action === 'keep'; }
 function dayKey(){ return ymdKey(todayParts()); }
 
+/* Puzzle downloads wait until the news is in: until the puzzles page is opened, or a few seconds after load. */
+function puzzleGate(){
+  return DAILY.gate || (DAILY.gate = new Promise(function(r){ var t = setTimeout(r, 3500); DAILY.openGate = function(){ clearTimeout(t); r(); }; }));
+}
 function loadWords(){
-  return DAILY.wordsP || (DAILY.wordsP = fetch('/words.txt').then(function(r){
+  return DAILY.wordsP || (DAILY.wordsP = puzzleGate().then(function(){ return fetch('/words.txt'); }).then(function(r){
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.text();
   }).then(NEWS_ENGINE.parseWordList).catch(function(e){ DAILY.wordsP = null; throw e; }));
@@ -28,7 +32,7 @@ function loadDayFeed(){
   if (saved && saved.day === day) return (DAILY.feedP[day] = Promise.resolve(saved));
   function get(d){ return fetch(WIKI_FEATURED + d.replace(/-/g, '/')).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }); }
   var t = todayParts(), prev = new Date(Date.UTC(t.y, t.m - 1, t.d - 1)).toISOString().slice(0, 10);
-  return (DAILY.feedP[day] = get(day).catch(function(){ return get(prev); }).then(function(f){
+  return (DAILY.feedP[day] = puzzleGate().then(function(){ return get(day); }).catch(function(){ return get(prev); }).then(function(f){
     var texts = [], page = function(a){ return a && a.content_urls ? a.content_urls.desktop.page : null; };
     if (f.tfa) texts.push({ src: 'tfa', text: f.tfa.extract, title: f.tfa.titles ? f.tfa.titles.normalized : '', link: page(f.tfa) });
     (f.news || []).forEach(function(n){ texts.push({ src: 'news', text: stripTags(n.story), title: n.links && n.links[0] ? n.links[0].titles.normalized : '', link: page(n.links && n.links[0]) }); });
@@ -54,10 +58,16 @@ function dailySudoku(){
 function getClues(words){
   return fetch('/api/clues?w=' + words.join(',')).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
 }
-/* cb(config for Crossword(), or null). Cached for the day once every clue is in. */
+/* cb(config for Crossword(), or null). One build per day, shared by every redraw; saved once every clue is in. */
 function dailyMini(cb){
   var day = dayKey(), saved = store('mini');
   if (saved && saved.v === 1 && saved.day === day) { cb(saved.cfg); return; }
+  if (DAILY.mini && DAILY.mini.day === day) { DAILY.mini.p.then(cb); return; }
+  var resolve, p = new Promise(function(r){ resolve = r; });
+  DAILY.mini = { day: day, p: p };
+  p.then(function(cfg){ if (!cfg && DAILY.mini && DAILY.mini.p === p) DAILY.mini = null; });   // a failed build can be tried again
+  p.then(cb);
+  cb = resolve;
   Promise.all([loadWords(), loadDayFeed().catch(function(){ return { texts: [] }; })]).then(function(r){
     var W = r[0], texts = r[1].texts, banned = new Set(), rounds = 0;
     (function attempt(){

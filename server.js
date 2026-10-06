@@ -220,7 +220,13 @@ function baseHeaders(res) {
 }
 function sendJson(res, status, obj, headers = {}) {
   const body = JSON.stringify(obj);
-  res.writeHead(status, Object.assign({ 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }, headers));
+  const h = Object.assign({ 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }, headers);
+  if (res.__gzip && body.length > 1400) {                 // the news parts are large: compress them
+    h['Content-Encoding'] = 'gzip'; h['Vary'] = 'Accept-Encoding';
+    res.writeHead(status, h);
+    return res.end(zlib.gzipSync(body, { level: 6 }));
+  }
+  res.writeHead(status, h);
   res.end(body);
 }
 function sendText(res, status, text) {
@@ -269,6 +275,12 @@ function engineForBrowser() {
     '  parseWordList: parseWordList, wordleAnswer: wordleAnswer, makeMini: makeMini, blankClue: blankClue, seedFrom: seedFrom };\n})();\n';
 }
 const ENGINE_JS = engineForBrowser();
+/* The news parts the page asks for, so the HTML can start fetching them before the script runs. */
+const NEWS_PRELOAD = (() => {
+  const src = read('engine/sources.js'), size = Number((src.match(/PART_SIZE = (\d+)/) || [])[1]) || 7;
+  const feeds = (src.match(/^\s*\{ id: '/gm) || []).length;
+  return Array.from({ length: Math.ceil(feeds / size) }, (_, k) => '/api/news/' + k).concat('/api/news/extras');
+})();
 const bundle = (...files) => '(function(){"use strict";\n' + [read('src/themes.js'), read('src/brand.js'), ENGINE_JS].concat(files.map(read)).join('\n') + '\n})();\n';
 const PUBLIC_ASSETS = {
   '/paper.css': asset(read('public/paper.css'), 'text/css; charset=utf-8'),
@@ -314,7 +326,7 @@ function siteFiles() {
   return buildSite(live.issue, {
     fonts: fontInfo(live.issue), template: VIEWS.site, readerJs: PUBLIC_ASSETS['/paper.js'].body, paperCss: PUBLIC_ASSETS['/paper.css'].body,
     favicon: PUBLIC_ASSETS['/favicon.svg'].body, manifest: JSON.parse(PUBLIC_ASSETS['/manifest.webmanifest'].body),
-    siteUrl: SITE_URL, ogImage: PUBLIC_ASSETS['/og-image.png'].body, words: PUBLIC_ASSETS['/words.txt'].body,
+    siteUrl: SITE_URL, ogImage: PUBLIC_ASSETS['/og-image.png'].body, words: PUBLIC_ASSETS['/words.txt'].body, newsPreload: NEWS_PRELOAD,
     icon192: PUBLIC_ASSETS['/icon-192.png'].body, icon512: PUBLIC_ASSETS['/icon-512.png'].body, appleIcon: PUBLIC_ASSETS['/apple-touch-icon.png'].body
   });
 }
@@ -536,7 +548,7 @@ async function route(req, res) {
   if (m === 'GET' || m === 'HEAD') {
     if (p === '/') {
       const f = fontInfo(live.issue);
-      return sendHtml(res, fill(VIEWS.reader, { TITLE: paperTitle(), ISSUE: scriptSafe(live.json), FONTS: escapeHtml(f.href), FONTLIST: escapeHtml(f.list), OG_IMAGE: '/og-image.png' }));
+      return sendHtml(res, fill(VIEWS.reader, { NEWS_PRELOAD: NEWS_PRELOAD.map((u) => `<link rel="preload" href="${u}" as="fetch" crossorigin fetchpriority="low">`).join('\n'), TITLE: paperTitle(), ISSUE: scriptSafe(live.json), FONTS: escapeHtml(f.href), FONTLIST: escapeHtml(f.list), OG_IMAGE: '/og-image.png' }));
     }
     if (PUBLIC_ASSETS[p]) return sendAsset(req, res, PUBLIC_ASSETS[p], 'no-cache');
     if (p === '/admin' || p === '/admin/') {
@@ -561,7 +573,8 @@ async function route(req, res) {
       if (!data) return sendJson(res, 404, { error: 'not_found' });
       const E = await engine();
       const out = wantFiltered ? Object.assign({}, data, newsM[1] === '0' ? { rules: (await import('./engine/filter.js')).ruleSummary() } : {}) : (newsM[1] === 'extras' ? data : E.publicPart(data));
-      return sendJson(res, 200, out, { 'Cache-Control': wantFiltered ? 'private, no-store' : 'public, max-age=300' });
+      const untilHour = Math.max(60, Math.ceil((NEWS_HOUR - (Date.now() % NEWS_HOUR)) / 1000));     // kept until the hour turns
+      return sendJson(res, 200, out, { 'Cache-Control': wantFiltered ? 'private, no-store' : 'public, max-age=' + untilHour });
     }
     if (p === '/api/clues') {
       const r = await cluesFor(String(url.searchParams.get('w') || '').split(','));

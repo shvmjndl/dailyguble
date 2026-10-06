@@ -5,6 +5,7 @@ wireView();
 wireClips();                            // readers can clip pages, like a real paper
 wireNight();                            // dark newsprint after sunset
 hooks.issue = function(){ return ISSUE; };
+hooks.lazyPages = true;                 // draw the page being read first, the rest in the background
 hooks.rerender = function(){ buildSheets(ISSUE); measure(); };
 loadAlmanac(ISSUE, function(){ liveUpdated(); updateNight(); });   // date, sun and moon now; tides and weather as they arrive
 /* The news: shown as soon as it's here, refreshed when the hour turns, never while someone is reading. */

@@ -43,7 +43,7 @@ function loadNews(onUpdate, withFiltered){
     }
   }
   NEWS.loading = true;
-  var q = '?h=' + hour + (withFiltered ? '&include=filtered' : ''), parts = [];
+  var q = withFiltered ? '?include=filtered&h=' + hour : '', parts = [];      // the page preloads these same addresses
   for (var k = 0; k < NEWS_ENGINE.PARTS; k++) parts.push(getJSONNews(NEWS_API + '/' + k + q).catch(function(){ return null; }));
   Promise.all([Promise.all(parts), getJSONNews(NEWS_API + '/extras' + q).catch(function(){ return null; })]).then(function(r){
     NEWS.loading = false; NEWS.hour = hour;
