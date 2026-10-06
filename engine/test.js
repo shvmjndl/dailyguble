@@ -7,6 +7,9 @@ import { makeFilter } from './filter.js';
 import { regionOf } from './places.js';
 import { tokens, clusterStories } from './cluster.js';
 import { processPart, publicPart, combine } from './edition.js';
+import { parseWordList, wordleAnswer, makeMini, fillShape, isInflected, blankClue } from './puzzles.js';
+import { pickClue } from './clues.js';
+import { readFileSync } from 'node:fs';
 
 let failed = 0, passed = 0;
 function eq(got, want, label) {
@@ -90,6 +93,29 @@ eq([part.stories.length, part.filtered.length, part.filteredCount], [0, 1, 1], '
 eq('filtered' in publicPart(part), false, 'readers never get filtered stories');
 const ed = combine([processPart([{ feed, text: rss }], {}, NOW)], { markets: null, onThisDay: [] }, { now: NOW });
 eq([ed.front.length, ed.sections.world.length, ed.front[0].title], [1, 1, 'Rates & markets'], 'combine places the story');
+
+// ---- daily puzzles
+const W = parseWordList(readFileSync(new URL('../public/words.txt', import.meta.url), 'utf8'));
+eq([W.byLen[5].length > 8000, W.commonByLen[5].length > 2000, W.all.has('apple'), W.all.has('xyzzy')], [true, true, true, false], 'word list loads');
+eq([isInflected('keys', W), isInflected('baked', W), isInflected('glass', W), isInflected('apple', W)], [true, true, false, false], 'inflections');
+const texts = [{ src: 'tfa', text: 'The castle was built beside a quiet river by the Normans. Its tower and moat survive.', title: 'A castle', link: 'https://en.wikipedia.org/wiki/Castle' }];
+const w1 = wordleAnswer('2026-10-06', texts, W), w2 = wordleAnswer('2026-10-06', texts, W);
+eq([w1.word === w2.word, ['quiet', 'river', 'tower'].includes(w1.word), w1.source && w1.source.title], [true, true, 'A castle'], 'word game: same word for everyone, from the day’s text');
+eq(wordleAnswer('2026-10-07', [], W).word.length, 5, 'word game: a word even without the day’s text');
+const m1 = makeMini('2026-10-06', texts, W), m2 = makeMini('2026-10-06', texts, W);
+eq([!!m1, JSON.stringify(m1 && m1.rows) === JSON.stringify(m2 && m2.rows)], [true, true], 'mini: made, and the same on every device');
+const words = m1.words.map((x) => x.word);
+eq([new Set(words).size === words.length, words.every((w) => W.all.has(w))], [true, true], 'mini: real words, none repeated');
+const g = m1.rows;
+const across = g.flatMap((r) => r.split('#').filter((x) => x.length > 1)), down = [0, 1, 2, 3, 4].map((c) => g.map((r) => r[c]).join('')).flatMap((col) => col.split('#').filter((x) => x.length > 1));
+eq(across.concat(down).every((w) => W.all.has(w)), true, 'mini: every row and column reads as a word');
+eq(fillShape(['.....', '.....', '.....', '.....', '.....'], { 5: ['abcde'] }, 1000), null, 'mini: an impossible fill gives up');
+eq(blankClue('river', texts), '“The castle was built beside a quiet ___ by the Normans”', 'clue from the day’s text');
+const wikt = (defs) => ({ en: [{ partOfSpeech: 'Noun', definitions: defs.map((d) => ({ definition: d })) }] });
+eq(pickClue('petal', wikt(['One of the parts of the <a href="x">corolla</a> of a flower. It is often bright.', 'The labia'])), 'One of the parts of the corolla of a flower', 'clue: first sense, first sentence');
+eq(pickClue('snore', wikt(['The act of snoring', 'A loud sleeper'])), 'A loud sleeper', 'clue: never gives the answer away');
+eq(pickClue('keys', wikt(['Plural of key'])), null, 'clue: no plain form-of clues');
+eq(pickClue('alfa', wikt(['NATO & ICAO radiotelephony clear code (spelling-alphabet name) for the letter A'])), null, 'clue: no spelling-alphabet clues');
 
 console.log(failed ? `${failed} failed, ${passed} passed` : `all ${passed} checks pass`);
 process.exit(failed ? 1 : 0);

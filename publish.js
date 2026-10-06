@@ -16,7 +16,7 @@ const crypto = require('node:crypto');
 
 /* Readers' browsers fetch tides and weather themselves, straight from these public services.
    The news comes from the site itself (/api/news, a Cloudflare Pages Function in functions/). */
-const DATA_SOURCES = ['https://api.tidesandcurrents.noaa.gov', 'https://api.weather.gov', 'https://api.open-meteo.com', 'https://api-bdc.io'];
+const DATA_SOURCES = ['https://api.tidesandcurrents.noaa.gov', 'https://api.weather.gov', 'https://api.open-meteo.com', 'https://api-bdc.io', 'https://api.wikimedia.org'];
 const SITE_CSP = [
   "default-src 'none'", "script-src 'self'", "style-src 'self' https://fonts.googleapis.com", "font-src https://fonts.gstatic.com",
   "img-src 'self' data: blob:", "connect-src 'self' " + DATA_SOURCES.join(' '), "manifest-src 'self'",
@@ -89,6 +89,8 @@ function buildSite(rawIssue, assets) {
     '  Cache-Control: public, max-age=31536000, immutable',
     '/*.png',
     '  Cache-Control: public, max-age=604800',
+    '/words.txt',
+    '  Cache-Control: public, max-age=604800',
     '/news-settings.json',
     '  Cache-Control: no-cache',
     ''
@@ -104,6 +106,7 @@ function buildSite(rawIssue, assets) {
     { path: 'apple-touch-icon.png', data: assets.appleIcon },
     ...(assets.ogImage ? [{ path: 'og-image.png', data: assets.ogImage }] : []),
     { path: '_headers', data: Buffer.from(headers) },       // Cloudflare Pages and Netlify read this
+    ...(assets.words ? [{ path: 'words.txt', data: Buffer.from(assets.words) }] : []),
     { path: 'news-settings.json', data: Buffer.from(JSON.stringify(newsSettings(issue))) },   // the filter settings /api/news uses
     { path: '.nojekyll', data: Buffer.from('') }             // GitHub Pages: serve files as they are
   ].concat(images);

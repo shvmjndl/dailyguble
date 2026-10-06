@@ -13,6 +13,7 @@
  *   GET  /api/site         where the public website is published, and how the last push went (admin)
  *   POST /api/site/publish publish the current edition to the public website now (admin)
  *   GET  /api/news/:part   one part of this hour's news (0..5, or "extras"); ?include=filtered for editors
+ *   GET  /api/clues?w=…    crossword clues for the daily mini, from Wiktionary
  *   GET  /healthz          liveness check
  *
  * No third-party packages: everything here is Node's standard library.
@@ -261,16 +262,17 @@ function asset(body, type) {
  * folded into the bundle as one function scope, exposing NEWS_ENGINE.combine and friends.
  */
 function engineForBrowser() {
-  const src = ['engine/sources.js', 'engine/places.js', 'engine/cluster.js', 'engine/combine.js'].map((f) => read(f)
+  const src = ['engine/sources.js', 'engine/places.js', 'engine/cluster.js', 'engine/combine.js', 'engine/filter.js', 'engine/puzzles.js'].map((f) => read(f)
     .replace(/^import [^;]+;\n/gm, '').replace(/^export \{[^}]*\} from [^;]+;\n/gm, '')
     .replace(/^export (?=const |let |function |async function )/gm, '')).join('\n');
-  return 'var NEWS_ENGINE = (function(){\n' + src + '\nreturn { combine: combine, PARTS: PARTS, EDITION_VERSION: EDITION_VERSION };\n})();\n';
+  return 'var NEWS_ENGINE = (function(){\n' + src + '\nreturn { combine: combine, PARTS: PARTS, EDITION_VERSION: EDITION_VERSION, makeFilter: makeFilter,\n' +
+    '  parseWordList: parseWordList, wordleAnswer: wordleAnswer, makeMini: makeMini, blankClue: blankClue, seedFrom: seedFrom };\n})();\n';
 }
 const ENGINE_JS = engineForBrowser();
 const bundle = (...files) => '(function(){"use strict";\n' + [read('src/themes.js'), read('src/brand.js'), ENGINE_JS].concat(files.map(read)).join('\n') + '\n})();\n';
 const PUBLIC_ASSETS = {
   '/paper.css': asset(read('public/paper.css'), 'text/css; charset=utf-8'),
-  '/paper.js': asset(bundle('src/core.js', 'src/news.js', 'src/almanac.js', 'src/reader.js'), 'text/javascript; charset=utf-8'),
+  '/paper.js': asset(bundle('src/core.js', 'src/news.js', 'src/daily.js', 'src/almanac.js', 'src/reader.js'), 'text/javascript; charset=utf-8'),
   '/login.css': asset(read('public/login.css'), 'text/css; charset=utf-8'),
   '/login.js': asset(read('public/login.js'), 'text/javascript; charset=utf-8'),
   '/favicon.svg': asset(read('public/favicon.svg'), 'image/svg+xml'),
@@ -278,11 +280,12 @@ const PUBLIC_ASSETS = {
   '/icon-192.png': asset(readBin('public/icon-192.png'), 'image/png'),
   '/icon-512.png': asset(readBin('public/icon-512.png'), 'image/png'),
   '/apple-touch-icon.png': asset(readBin('public/apple-touch-icon.png'), 'image/png'),
-  '/og-image.png': asset(readBin('public/og-image.png'), 'image/png')
+  '/og-image.png': asset(readBin('public/og-image.png'), 'image/png'),
+  '/words.txt': asset(read('public/words.txt'), 'text/plain; charset=utf-8')
 };
 const ADMIN_ASSETS = {
   '/admin/editor.css': asset(read('admin/editor.css'), 'text/css; charset=utf-8'),
-  '/admin/editor.js': asset(bundle('src/core.js', 'src/news.js', 'src/almanac.js', 'src/editor.js'), 'text/javascript; charset=utf-8')
+  '/admin/editor.js': asset(bundle('src/core.js', 'src/news.js', 'src/daily.js', 'src/almanac.js', 'src/editor.js'), 'text/javascript; charset=utf-8')
 };
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function paperTitle() {
@@ -311,7 +314,7 @@ function siteFiles() {
   return buildSite(live.issue, {
     fonts: fontInfo(live.issue), template: VIEWS.site, readerJs: PUBLIC_ASSETS['/paper.js'].body, paperCss: PUBLIC_ASSETS['/paper.css'].body,
     favicon: PUBLIC_ASSETS['/favicon.svg'].body, manifest: JSON.parse(PUBLIC_ASSETS['/manifest.webmanifest'].body),
-    siteUrl: SITE_URL, ogImage: PUBLIC_ASSETS['/og-image.png'].body,
+    siteUrl: SITE_URL, ogImage: PUBLIC_ASSETS['/og-image.png'].body, words: PUBLIC_ASSETS['/words.txt'].body,
     icon192: PUBLIC_ASSETS['/icon-192.png'].body, icon512: PUBLIC_ASSETS['/icon-512.png'].body, appleIcon: PUBLIC_ASSETS['/apple-touch-icon.png'].body
   });
 }
@@ -369,6 +372,24 @@ async function newsPart(name) {
   if (c && c.data && c.hour === hour) return c.data;
   if (c && c.data && hour - c.hour <= 3) { build().catch(() => {}); return c.data; }     // last hour's news now, this hour's soon
   return build();
+}
+
+/* Crossword clues, remembered for a month (Wiktionary is asked about each word once). */
+const clueCache = new Map();
+let cluesP = null;
+async function cluesFor(words) {
+  const C = await (cluesP || (cluesP = import('./engine/clues.js')));
+  const list = [...new Set(words.map((w) => String(w).toLowerCase()).filter(C.validWord))].slice(0, 16), out = {};
+  let complete = true;
+  await Promise.all(list.map(async (w) => {
+    const hit = clueCache.get(w);
+    if (hit && Date.now() - hit.at < 30 * 86400000) { out[w] = hit.clue; return; }
+    const clue = await C.fetchClue(w);
+    if (clue === undefined) { complete = false; out[w] = null; return; }
+    if (clueCache.size > 5000) clueCache.clear();
+    clueCache.set(w, { clue, at: Date.now() }); out[w] = clue;
+  }));
+  return { list, clues: out, complete };
 }
 
 /* ---------------- the edition on disk ---------------- */
@@ -541,6 +562,11 @@ async function route(req, res) {
       const E = await engine();
       const out = wantFiltered ? Object.assign({}, data, newsM[1] === '0' ? { rules: (await import('./engine/filter.js')).ruleSummary() } : {}) : (newsM[1] === 'extras' ? data : E.publicPart(data));
       return sendJson(res, 200, out, { 'Cache-Control': wantFiltered ? 'private, no-store' : 'public, max-age=300' });
+    }
+    if (p === '/api/clues') {
+      const r = await cluesFor(String(url.searchParams.get('w') || '').split(','));
+      if (!r.list.length) return sendJson(res, 400, { error: 'no words' });
+      return sendJson(res, 200, { clues: r.clues, complete: r.complete }, { 'Cache-Control': r.complete ? 'public, max-age=86400' : 'no-store' });
     }
     if (p === '/api/site') {
       if (!requireAdmin(req, res)) return;

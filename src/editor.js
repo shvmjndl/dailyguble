@@ -82,15 +82,17 @@ var SCHEMA = {
       { k:'items', t:'items', label:'Ad', sub:[ { k:'tag', t:'text', label:'Heading', hint:'e.g. FOR SALE' }, { k:'text', t:'long', label:'Ad text' } ],
         make:function(){ return { tag:'FOR SALE', text:'Describe it. Price. Phone.' }; } } ],
     make:function(){ return { type:'classified', items:[ { tag:'FOR SALE', text:'Describe it. Price. Phone.' }, { tag:'WANTED', text:'What you need. Who to ask.' } ] }; } },
-  crossword: { label:'Crossword', group:'Games', special:'crossword',
+  crossword: { label:'Crossword', group:'Games', special:'crossword', fields:[ { k:'daily', t:'check', label:'A new 5×5 mini every day, made automatically (your grid below is used if it can’t be made)' } ],
     make:function(){
       var across = {}, down = {};
       CROSSWORD_STARTER.forEach(function(w){ across[w] = 'Clue for ' + w; down[w] = 'Clue for ' + w; });
       return { type:'crossword', id:newId('cw'), grid:CROSSWORD_STARTER.slice(), across:across, down:down };
     } },
-  sudoku: { label:'Sudoku', group:'Games', special:'sudoku', make:function(){ return { type:'sudoku', id:newId('sd'), givens:sdGenerate(30) }; } },
+  sudoku: { label:'Sudoku', group:'Games', special:'sudoku', fields:[ { k:'daily', t:'check', label:'A new puzzle every day, harder through the week (print its level with {{sudokuLevel}})' } ], make:function(){ return { type:'sudoku', id:newId('sd'), givens:sdGenerate(30) }; } },
   wordsearch: { label:'Word search', group:'Games', special:'wordsearch',
     make:function(){ return { type:'wordsearch', id:newId('ws'), size:10, seed:Math.floor(Math.random() * 1e9), words:['HARBOR','LIGHT','FERRY','TIDE','DORY','KEEPER','ANCHOR','GULL'] }; } },
+  wordle: { label:'Word game (daily)', group:'Games', fields:[], note:'Six tries at a five-letter word. A new word every day at midnight, picked from Wikipedia’s front page for that day.',
+    make:function(){ return { type:'wordle', id:newId('wd') }; } },
   html: { label:'Custom HTML', group:'Advanced', fields:[ { k:'html', t:'long', label:'HTML', rows:8 } ], make:function(){ return { type:'html', html:'<p>Custom content</p>' }; } },
   head: { label:'Headline', group:null, fields:[ { k:'text', t:'text', label:'Headline' }, { k:'size', t:'select', label:'Size', options:SIZE_OPTS, def:'big' } ], make:function(){ return { type:'head', text:'Headline' }; } }
 };
@@ -768,7 +770,7 @@ function viewBlock(body){
   (S.fields || []).forEach(function(f){ s.appendChild(buildField(b, f)); });
   body.appendChild(s);
   if (S.special === 'crossword') body.appendChild(cwEditor(b));
-  if (S.special === 'sudoku') body.appendChild(sdEditor(b));
+  if (S.special === 'sudoku' && !b.daily) body.appendChild(sdEditor(b));
   if (S.special === 'wordsearch') body.appendChild(wsEditor(b));
   if (b.type === 'box') {
     b.blocks = b.blocks || [];

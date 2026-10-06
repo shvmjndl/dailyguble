@@ -46,16 +46,16 @@
       },
       "columns": [
         {
-          "w": 1.5,
+          "w": 1.05,
           "blocks": [
             {
               "type": "sect",
               "strong": true,
-              "text": "The Guble Crossword"
+              "text": "The Daily Mini"
             },
             {
               "type": "crossword",
-              "id": "cw-world-1",
+              "id": "mini",
               "grid": [
                 "ELM#PAN",
                 "BEE#AGO",
@@ -90,22 +90,22 @@
                 "OAR": "Paddle",
                 "RYE": "Grain for bread or whisky",
                 "YEW": "Evergreen with red berries"
-              }
+              },
+              "daily": true
             }
           ]
         },
         {
-          "w": 1.3,
+          "w": 0.95,
           "blocks": [
             {
               "type": "sect",
               "strong": true,
-              "text": "Sudoku &nbsp;&middot;&nbsp; Moderate"
+              "text": "Guble Word"
             },
             {
-              "type": "sudoku",
-              "id": "sd-world-1",
-              "givens": "5..643...97.......6....2....8.51..4.7.1...2.5.5..24.1....2....6.......59...859..1"
+              "type": "wordle",
+              "id": "word"
             },
             {
               "type": "rule"
@@ -118,24 +118,44 @@
                   "type": "list",
                   "items": [
                     {
-                      "title": "Pick a square",
-                      "text": "Tap it. The page zooms in so the grid is easy to read."
+                      "title": "New every day",
+                      "text": "The mini crossword, the word game and the sudoku change at midnight, your time."
                     },
                     {
-                      "title": "Type",
-                      "text": "Use your keyboard, or the number pad under the sudoku. Arrow keys move, Backspace erases."
+                      "title": "Pick a square",
+                      "text": "Tap it. The page zooms in so the grid is easy to read. Type, or use the keys under the puzzle."
                     },
                     {
                       "title": "Crossword",
-                      "text": "Tap the same square again, or press Space, to switch between Across and Down. Tab jumps to the next clue."
+                      "text": "Tap the same square again to switch between Across and Down."
+                    },
+                    {
+                      "title": "Word game",
+                      "text": "Six tries at a five-letter word. Dark: right letter, right place. Red: in the word, somewhere else. Grey: not in it."
                     },
                     {
                       "title": "Sudoku",
-                      "text": "Turn on Notes to pencil in small candidates. Clashing numbers turn red."
+                      "text": "Turn on Notes to pencil in small candidates. It gets harder through the week."
                     }
                   ]
                 }
               ]
+            }
+          ]
+        },
+        {
+          "w": 1.3,
+          "blocks": [
+            {
+              "type": "sect",
+              "strong": true,
+              "text": "Sudoku &nbsp;&middot;&nbsp; {{sudokuLevel}}"
+            },
+            {
+              "type": "sudoku",
+              "id": "sd-daily",
+              "givens": "5..643...97.......6....2....8.51..4.7.1...2.5.5..24.1....2....6.......59...859..1",
+              "daily": true
             }
           ]
         }

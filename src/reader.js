@@ -8,7 +8,12 @@ loadAlmanac(ISSUE, liveUpdated);       // date, sun and moon now; tides and weat
 /* The news: shown as soon as it's here, refreshed when the hour turns, never while someone is reading. */
 function showNews(){ if (newsBusy()) { NEWS.pending = true; return; } NEWS.pending = false; hooks.rerender(); refreshLive(); }
 loadNews(showNews);
-setInterval(function(){ loadNews(showNews); if (NEWS.pending) showNews(); }, 30000);
+var shownDay = dayKey();
+setInterval(function(){
+  loadNews(showNews);
+  if (dayKey() !== shownDay && !newsBusy()) { shownDay = dayKey(); hooks.rerender(); }    // midnight: today's puzzles
+  else if (NEWS.pending) showNews();
+}, 30000);
 applyTheme(ISSUE);
 buildSheets(ISSUE);
 measure();

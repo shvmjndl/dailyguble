@@ -362,7 +362,348 @@ function combine(parts, extras = {}, { now = Date.now() } = {}) {
 }
 
 
-return { combine: combine, PARTS: PARTS, EDITION_VERSION: EDITION_VERSION };
+/*
+ * The content filter: plain word and phrase rules, no AI.
+ *
+ * Every rule is matched against a story's headline and summary as a WHOLE word
+ * or phrase, ignoring case, so place names like Scunthorpe or Essex never trip it.
+ * Each pattern is a small regular expression: \w* allows endings ("porn\w*" catches
+ * "porno", "pornographic"). Categories are checked in order; the first match wins.
+ *
+ *   remove  the story never reaches readers
+ *   note    the story stays, with a short note, but is never the front-page lead
+ */
+
+const RULES = [
+  {
+    key: 'explicit', label: 'Sexually explicit', action: 'remove',
+    patterns: [
+      '(?<!child |revenge |deepfake )porn\\w*', 'xxx', 'sex tapes?', 'sex videos?', 'nude (?:photos?|pictures?|images?|videos?|selfies?|scenes?)',
+      'naked (?:photos?|pictures?|images?|videos?|selfies?)', 'nudes', 'topless (?:photos?|pictures?|images?)',
+      'explicit (?:photos?|pictures?|images?|videos?|content|scenes?)', 'orgasm\\w*', 'masturbat\\w*',
+      'onlyfans', 'sexting', 'strip ?clubs?', 'stripper\\w*', 'camgirls?', 'hentai', 'bdsm', 'dildos?', 'sex toys?'
+    ]
+  },
+  {
+    key: 'gore', label: 'Graphic gore', action: 'remove',
+    // in a headline it goes; deeper in the summary (a war report, a review of a Goya print) it stays with a note
+    summaryOnly: { action: 'note', note: 'This story contains descriptions of graphic violence.' },
+    patterns: [
+      'gory', 'gruesome (?:video|footage|images|photos|pictures)', 'graphic (?:video|footage|images|photos|pictures|content|scenes)',
+      'dismember\\w*', 'decapitat\\w*', 'disembowel\\w*', 'beheading videos?', 'severed (?:heads?|limbs?|body|bodies|hands?|feet|legs?|arms?)',
+      'mutilated (?:body|bodies|corpses?|remains)', 'body parts', 'charred (?:body|bodies|remains|corpses?)', 'skinned alive', 'burned alive', 'eaten alive'
+    ]
+  },
+  {
+    key: 'slurs', label: 'Slurs and hate terms', action: 'remove',
+    patterns: [
+      'nigg(?:er|a|ers|as|az)', 'negro(?:es)?', 'coons?', 'darkies', 'darkie', 'jungle bunn(?:y|ies)', 'porch monkeys?',
+      'chinks?', 'gooks?', 'japs', 'slant[- ]?eyes?', 'ching chong',
+      'kikes?', 'yids?', 'heebs?',
+      'spics?', 'wetbacks?', 'beaners?',
+      'pakis?', 'ragheads?', 'towelheads?', 'sand ?n\\w*gg\\w*', 'camel ?jockeys?', 'muzzies?',
+      'gypp?os?', 'pikeys?',
+      'fag(?:s|got|gots)?', 'trann(?:y|ies)', 'shemales?',
+      'retard(?:s|ed)?', 'spastics?', 'spaz', 'mongs?'
+    ]
+  },
+  {
+    key: 'profanity', label: 'Explicit profanity', action: 'remove',
+    patterns: [
+      'fuck\\w*', 'f\\*ck\\w*', 'motherfuck\\w*', 'shit\\w*', 'bullshit', 'horseshit', 'cunts?', 'twats?', 'bitch\\w*',
+      'arse ?holes?', 'ass ?holes?', 'dick ?heads?', 'wank\\w*', 'bastards?', 'piss(?:ed)? off', 'cock ?suck\\w*', 'pussy(?! riot)', 'pussies', 'slut\\w*', 'whores?'
+    ]
+  },
+  {
+    key: 'suicide', label: 'Suicide and self-harm', action: 'note', note: 'This story discusses suicide.',
+    patterns: [
+      'suicid\\w*(?![ -](?:bomb|attack|drone|vest|car|truck|mission|squad))', 'self[- ]harm\\w*', 'took (?:his|her|their) own lives?', 'took (?:his|her|their) own life', 'killed (?:himself|herself|themselves)',
+      'kill (?:himself|herself|themselves|yourself|myself)', 'kys', 'overdosed? on purpose'
+    ]
+  },
+  {
+    key: 'sexual-violence', label: 'Sexual violence', action: 'note', note: 'This story discusses sexual violence.',
+    patterns: [
+      'rap(?:e|es|ed|ing|ist|ists)', 'gang[- ]?rap\\w*', 'sexual(?:ly)? (?:assault\\w*|abuse\\w*|violence|harass\\w*|exploit\\w*)',
+      'molest\\w*', 'indecent assault', 'revenge porn', 'deepfake porn', 'sex(?:ual)? offen[cs]es?', 'sex offenders?', 'groping'
+    ]
+  },
+  {
+    key: 'child-abuse', label: 'Child abuse', action: 'note', note: 'This story discusses child abuse.',
+    patterns: [
+      'child (?:abuse|abusers?|sexual abuse|pornography|grooming|exploitation)', 'paedophil\\w*', 'pedophil\\w*', 'child porn\\w*',
+      'csam', 'grooming gangs?', 'abused (?:children|a child|minors?)'
+    ]
+  },
+  {
+    key: 'eating-disorders', label: 'Eating disorders', action: 'note', note: 'This story discusses eating disorders.',
+    patterns: ['eating disorders?', 'anorexi\\w*', 'bulimi\\w*', 'binge[- ]eating']
+  }
+];
+
+/*
+ * Matching works on lower-cased text with plain (non-unicode) expressions: several times
+ * faster than unicode ones, which matters on Cloudflare's 10 ms budget. A "word" edge is
+ * any character that is not a letter or digit in Latin, Greek or Cyrillic.
+ */
+const L = 'a-z0-9\\u00c0-\\u024f\\u0370-\\u03ff\\u0400-\\u04ff';
+const B = '(?<![' + L + '])', E = '(?![' + L + '])';
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const COMPILED = RULES.map((r) => Object.assign({}, r, { re: new RegExp(B + '(?:' + r.patterns.join('|') + ')' + E) }));
+const ANY = new RegExp(B + '(?:' + RULES.flatMap((r) => r.patterns).join('|') + ')' + E);   // one pass clears most stories
+
+/* Turn the editor's own word lists into the same kind of rule. */
+function compileList(words, flags = '') {
+  const list = (words || []).map((w) => String(w).trim().toLowerCase()).filter(Boolean).map((w) => escapeRe(w).replace(/\\\*/g, '[' + L + ']*').replace(/\s+/g, '\\s+'));
+  return list.length ? new RegExp(B + '(?:' + list.join('|') + ')' + E, flags) : null;
+}
+
+/*
+ * Check one story. settings: { blockWords, allowWords, blockOutlets, allow (story ids) }.
+ * Returns { action: 'keep' | 'note' | 'remove', category, label, match, note }.
+ */
+function makeFilter(settings = {}) {
+  const block = compileList(settings.blockWords), allowG = compileList(settings.allowWords, 'g');
+  const allowIds = new Set(settings.allow || []), blockedOutlets = new Set((settings.blockOutlets || []).map((o) => String(o).toLowerCase()));
+  return function check(story) {
+    if (blockedOutlets.has(String(story.outlet).toLowerCase())) return { action: 'remove', category: 'outlet', label: 'Blocked outlet', match: story.outlet };
+    let title = story.title.toLowerCase(), text = title + ' • ' + String(story.summary || '').toLowerCase();
+    if (allowG) { text = text.replace(allowG, ' '); title = title.replace(allowG, ' '); }   // the editor's "never block" words don't count
+    const restored = allowIds.has(story.id);
+    if (block && !restored) { const m = text.match(block); if (m) return { action: 'remove', category: 'editor', label: 'Your blocked words', match: m[0] }; }
+    if (!ANY.test(text)) return { action: 'keep' };
+    let soft = null;
+    for (const r of COMPILED) {
+      const m = text.match(r.re);
+      if (!m) continue;
+      let action = r.action, note = r.note || null;
+      if (r.summaryOnly && !r.re.test(title)) ({ action, note } = r.summaryOnly);
+      if (action === 'remove' && restored) continue;                    // an editor restored this story
+      if (action === 'remove') return { action, category: r.key, label: r.label, match: m[0], note };
+      if (!soft) soft = { action, category: r.key, label: r.label, match: m[0], note };   // a later rule may still remove it
+    }
+    return soft || { action: 'keep' };
+  };
+}
+
+/* The built-in lists, for showing in the newsroom. */
+function ruleSummary() {
+  return RULES.map((r) => ({ key: r.key, label: r.label, action: r.action, note: r.note || null, patterns: r.patterns }));
+}
+
+/*
+ * The daily puzzles' rules: today's word for the word game, and a 5x5 mini crossword.
+ * Pure functions, no network: they run in readers' browsers (folded into the paper's
+ * script), and in Node for the checks in engine/test.js.
+ *
+ * Everyone gets the same puzzles on the same date: the only inputs are the date, the
+ * word list and the text of Wikipedia's front page for that date, and every "random"
+ * choice comes from a generator seeded with the date.
+ */
+
+/* words.txt: "3:<all 3-letter words run together>", "c3:<the common ones>", and so on for 4 and 5. */
+function parseWordList(text) {
+  const W = { all: new Set(), common: new Set(), byLen: {}, commonByLen: {} };
+  for (const line of String(text).split('\n')) {
+    const m = line.match(/^(c?)(\d):([a-z]*)$/);
+    if (!m) continue;
+    const n = +m[2], s = m[3], list = [];
+    for (let i = 0; i + n <= s.length; i += n) list.push(s.substr(i, n));
+    if (m[1]) { W.commonByLen[n] = list; list.forEach((w) => W.common.add(w)); }
+    else { W.byLen[n] = list; list.forEach((w) => W.all.add(w)); }
+  }
+  for (const w of W.common) W.all.add(w);
+  return W;
+}
+
+function seedFrom(text) {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function rng(seed) {
+  let a = seed | 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function shuffled(list, rnd) {
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+
+/* Little words that make dull answers and odd clues. */
+const DULL = new Set(('the and but for are was not you his her its our has had who how why all any can may she him own ' +
+  'that this with from have were they them what when than then there their which would could should been into onto upon over ' +
+  'very just also only more most much many each both some such will shall your yours mine ours here where while being since ' +
+  'under until among about after other these those first every never often still again shall whom whose done does doing').split(' '));
+
+/* Plurals and verb endings: "keys" and "baked" make weaker answers than "key" and "bake". */
+function isInflected(w, W) {
+  const has = (x) => x.length >= 3 && W.all.has(x);
+  if (w.endsWith('s') && !w.endsWith('ss') && (has(w.slice(0, -1)) || (w.endsWith('es') && has(w.slice(0, -2))))) return true;
+  if (w.endsWith('ed') && (has(w.slice(0, -2)) || has(w.slice(0, -1)) || (w.endsWith('ied') && has(w.slice(0, -3) + 'y')))) return true;
+  if (w.endsWith('ing') && (has(w.slice(0, -3)) || has(w.slice(0, -3) + 'e'))) return true;
+  return false;
+}
+
+/*
+ * The day's text: plain words written in lower case (so not names) that are in the word list,
+ * each scored by where it appeared. texts: [{ src: 'tfa' | 'news' | 'read' | 'otd' | 'dyk', text, title? }]
+ */
+function dayWords(texts, W, isSafe) {
+  const score = {}, from = {};
+  const weight = { tfa: 3, news: 2, dyk: 2, read: 1, otd: 1 };
+  for (const t of texts) {
+    for (const w of String(t.text || '').split(/[^A-Za-z]+/)) {
+      if (w.length < 3 || w.length > 5 || w !== w.toLowerCase() || !W.all.has(w) || DULL.has(w)) continue;
+      if (isSafe && !isSafe(w)) continue;
+      score[w] = (score[w] || 0) + (weight[t.src] || 1);
+      if (!from[w] || (weight[t.src] || 1) > (weight[from[w].src] || 1)) from[w] = t;
+    }
+  }
+  return { score, from };
+}
+
+/* Today's word for the word game: a five-letter word from today's Wikipedia when there is a good one. */
+function wordleAnswer(day, texts, W, isSafe) {
+  const rnd = rng(seedFrom('wordle:' + day));
+  const { score, from } = dayWords(texts, W, isSafe);
+  const good = (w) => w.length === 5 && W.common.has(w) && !isInflected(w, W) && !DULL.has(w) && (!isSafe || isSafe(w));
+  const fromDay = Object.keys(score).filter(good).sort((a, b) => score[b] - score[a] || (a < b ? -1 : 1));
+  if (fromDay.length) {
+    const top = fromDay.slice(0, Math.min(12, fromDay.length)), w = top[Math.floor(rnd() * top.length)];
+    return { word: w, source: from[w] ? { src: from[w].src, title: from[w].title || null, link: from[w].link || null } : null };
+  }
+  const pool = (W.commonByLen[5] || W.byLen[5] || []).filter(good);
+  return { word: pool[Math.floor(rnd() * pool.length)] || 'paper', source: null };
+}
+
+/* Grid shapes for the mini, NYT-mini style. '#' is a black square. */
+const MINI_SHAPES = [
+  ['#....', '.....', '.....', '.....', '....#'],
+  ['....#', '.....', '.....', '.....', '#....'],
+  ['#...#', '.....', '.....', '.....', '#...#'],
+  ['##...', '#....', '.....', '....#', '...##'],
+  ['...##', '....#', '.....', '#....', '##...']
+];
+
+/* The across and down slots of a shape. */
+function slotsOf(shape) {
+  const R = shape.length, C = shape[0].length, black = (r, c) => shape[r][c] === '#', slots = [];
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    if (black(r, c)) continue;
+    if ((c === 0 || black(r, c - 1)) && c + 1 < C && !black(r, c + 1)) { const cells = []; for (let k = c; k < C && !black(r, k); k++) cells.push(r * C + k); slots.push({ dir: 'a', cells }); }
+    if ((r === 0 || black(r - 1, c)) && r + 1 < R && !black(r + 1, c)) { const cells = []; for (let k = r; k < R && !black(k, c); k++) cells.push(k * C + c); slots.push({ dir: 'd', cells }); }
+  }
+  return slots;
+}
+
+/*
+ * Fill a shape with words from lists[length] (best first). Bit sets index every word by
+ * letter and position, and the slot with the fewest choices is filled next, so a 5x5
+ * takes a few milliseconds. The budget counts steps, not time, so every device finds
+ * the very same grid. Returns { rows, words: [{ dir, cells, word }] } or null.
+ */
+function fillShape(shape, lists, budget = 40000, banned = new Set()) {
+  const R = shape.length, C = shape[0].length, slots = slotsOf(shape);
+  if (slots.some((s) => s.cells.length < 3 || !lists[s.cells.length])) return null;
+  const idx = {};
+  for (const n of new Set(slots.map((s) => s.cells.length))) {
+    const L = lists[n], size = (L.length + 31) >>> 5, by = [], all = new Uint32Array(size);
+    for (let p = 0; p < n; p++) by.push({});
+    L.forEach((w, i) => {
+      if (banned.has(w)) return;
+      all[i >>> 5] |= 1 << (i & 31);
+      for (let p = 0; p < n; p++) (by[p][w[p]] || (by[p][w[p]] = new Uint32Array(size)))[i >>> 5] |= 1 << (i & 31);
+    });
+    idx[n] = { by, all, size };
+  }
+  const grid = new Array(R * C).fill(''), used = new Set(), chosen = new Array(slots.length).fill(null);
+  let steps = 0;
+  function options(s) {
+    const n = s.cells.length, X = idx[n], acc = X.all.slice();
+    for (let p = 0; p < n; p++) {
+      const ch = grid[s.cells[p]];
+      if (!ch) continue;
+      const b = X.by[p][ch];
+      if (!b) return [];
+      for (let i = 0; i < X.size; i++) acc[i] &= b[i];
+    }
+    const out = [];
+    for (let i = 0; i < X.size; i++) {
+      let w = acc[i];
+      while (w) { const t = w & -w, j = (i << 5) + (31 - Math.clz32(t)); if (!used.has(lists[n][j])) out.push(lists[n][j]); w ^= t; }
+    }
+    return out;
+  }
+  function solve() {
+    if (++steps > budget) return false;
+    let best = -1, opts = null;
+    for (let i = 0; i < slots.length; i++) {
+      if (chosen[i]) continue;
+      const o = options(slots[i]);
+      if (!o.length) return false;
+      if (!opts || o.length < opts.length) { best = i; opts = o; }
+    }
+    if (best < 0) return true;
+    const s = slots[best], before = s.cells.map((k) => grid[k]);
+    for (const w of opts.slice(0, 40)) {
+      s.cells.forEach((k, p) => { grid[k] = w[p]; });
+      chosen[best] = w; used.add(w);
+      if (solve()) return true;
+      used.delete(w); chosen[best] = null;
+      s.cells.forEach((k, p) => { grid[k] = before[p]; });
+      if (steps > budget) return false;
+    }
+    return false;
+  }
+  if (!solve()) return null;
+  return {
+    rows: shape.map((row, r) => row.split('').map((ch, c) => (ch === '#' ? '#' : grid[r * C + c])).join('')),
+    words: slots.map((s, i) => ({ dir: s.dir, cells: s.cells, word: chosen[i] }))
+  };
+}
+
+/*
+ * Today's mini: today's Wikipedia words first, then everyday words in a daily order.
+ * banned: words to leave out (e.g. ones no clue could be found for).
+ */
+function makeMini(day, texts, W, isSafe, banned = new Set()) {
+  const rnd = rng(seedFrom('mini:' + day));
+  const { score } = dayWords(texts, W, isSafe);
+  const ok = (w) => !DULL.has(w) && !isInflected(w, W) && (!isSafe || isSafe(w)) && !banned.has(w);
+  const lists = {};
+  for (const n of [3, 4, 5]) {
+    const today = Object.keys(score).filter((w) => w.length === n && W.common.has(w) && ok(w)).sort((a, b) => score[b] - score[a] || (a < b ? -1 : 1));
+    const seen = new Set(today);
+    lists[n] = today.concat(shuffled((W.commonByLen[n] || []).filter((w) => !seen.has(w) && ok(w)), rnd));
+  }
+  for (const shape of shuffled(MINI_SHAPES, rnd)) {
+    const f = fillShape(shape, lists, 40000, banned);
+    if (f) return Object.assign(f, { today: f.words.filter((x) => score[x.word]).map((x) => x.word) });
+  }
+  return null;
+}
+
+/* A clue from the day's own text, for words that have no dictionary clue: "... the ___ of ..." */
+function blankClue(word, texts) {
+  const re = new RegExp('(^|[^A-Za-z])' + word + '([^A-Za-z]|$)');
+  for (const t of texts) {
+    for (const s of String(t.text || '').split(/(?<=[.!?])\s+/)) {
+      if (s.length > 150 || !re.test(s)) continue;
+      return '“' + s.replace(re, '$1___$2').replace(/[.]$/, '') + '”';
+    }
+  }
+  return null;
+}
+
+return { combine: combine, PARTS: PARTS, EDITION_VERSION: EDITION_VERSION, makeFilter: makeFilter,
+  parseWordList: parseWordList, wordleAnswer: wordleAnswer, makeMini: makeMini, blankClue: blankClue, seedFrom: seedFrom };
 })();
 
 /* The Daily Guble: shared renderer, games and reading controls.
@@ -555,7 +896,7 @@ var LIVE_TOKENS = [
   ['temp', 'Temperature now'], ['conditions', 'Sky right now'], ['forecast', 'Short forecast'],
   ['high', 'Today’s high'], ['low', 'Tonight’s low'], ['tonight', 'Tonight'],
   ['tomorrowWeather', 'Tomorrow’s weather'], ['dayAfterWeather', 'The day after'], ['weatherPlace', 'Where the weather is for'],
-  ['updated', 'When the news was last updated']
+  ['updated', 'When the news was last updated'], ['sudokuLevel', 'How hard today’s sudoku is']
 ];
 var TOKEN_RE = /\{\{\s*(\w+)\s*\}\}/g;
 function liveTZ(){ return (ALMANAC && ALMANAC.timeZone) || 'America/New_York'; }
@@ -599,6 +940,7 @@ function liveValues(){
     moon: A.moon ? A.moon.phase : '—', moonLit: A.moon ? A.moon.illumination + '%' : '—',
     weatherPlace: A.placeName || '—',
     updated: newsUpdatedText(),
+    sudokuLevel: dailySudoku().level,
     temp: wx(function(W){ return W.current.temp + '°'; }),
     conditions: wx(function(W){ return W.current.text; }),
     forecast: wx(function(W){ return W.forecast; }),
@@ -1174,6 +1516,7 @@ var PEERS = [];
 })();
 
 function Sudoku(cfg){
+  if (cfg.daily) { var today = dailySudoku(); cfg = { id: (cfg.id || 'sd') + '-' + today.day, givens: today.givens }; }   // a new one every day
   var giv = sdParse(cfg.givens);
   if (giv.length !== 81) throw new Error('the puzzle needs 81 squares, it has ' + giv.length);
   var sol = new Array(81).fill(0);
@@ -2359,6 +2702,199 @@ function newsUpdatedText(){
   return clock(new Date(P.updatedAt).toISOString());
 }
 
+/* =========================================================
+   DAILY PUZZLES — a new sudoku, word game and mini crossword every day.
+   Made in the reader's own browser at midnight their time. Everyone gets
+   the same puzzles on the same date: the inputs are only the date, the
+   word list and Wikipedia's front page for that day (engine/puzzles.js).
+   ========================================================= */
+var DAILY = { wordsP: null, feedP: {}, sd: {} };
+var WIKI_FEATURED = 'https://api.wikimedia.org/feed/v1/wikipedia/en/featured/';
+var SAFE = NEWS_ENGINE.makeFilter({});
+function isSafeWord(w){ return SAFE({ title: w, summary: '', outlet: '', id: '' }).action === 'keep'; }
+function dayKey(){ return ymdKey(todayParts()); }
+
+function loadWords(){
+  return DAILY.wordsP || (DAILY.wordsP = fetch('/words.txt').then(function(r){
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  }).then(NEWS_ENGINE.parseWordList).catch(function(e){ DAILY.wordsP = null; throw e; }));
+}
+function stripTags(h){
+  return String(h || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+}
+/* The text of Wikipedia's front page for the reader's date (or the day before, early in the morning). */
+function loadDayFeed(){
+  var day = dayKey();
+  if (DAILY.feedP[day]) return DAILY.feedP[day];
+  var saved = store('dayfeed');
+  if (saved && saved.day === day) return (DAILY.feedP[day] = Promise.resolve(saved));
+  function get(d){ return fetch(WIKI_FEATURED + d.replace(/-/g, '/')).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }); }
+  var t = todayParts(), prev = new Date(Date.UTC(t.y, t.m - 1, t.d - 1)).toISOString().slice(0, 10);
+  return (DAILY.feedP[day] = get(day).catch(function(){ return get(prev); }).then(function(f){
+    var texts = [], page = function(a){ return a && a.content_urls ? a.content_urls.desktop.page : null; };
+    if (f.tfa) texts.push({ src: 'tfa', text: f.tfa.extract, title: f.tfa.titles ? f.tfa.titles.normalized : '', link: page(f.tfa) });
+    (f.news || []).forEach(function(n){ texts.push({ src: 'news', text: stripTags(n.story), title: n.links && n.links[0] ? n.links[0].titles.normalized : '', link: page(n.links && n.links[0]) }); });
+    (f.dyk || []).forEach(function(d){ texts.push({ src: 'dyk', text: stripTags(d.html || d.text) }); });
+    ((f.mostread || {}).articles || []).forEach(function(a){ if (a.extract) texts.push({ src: 'read', text: a.extract, title: a.titles ? a.titles.normalized : '', link: page(a) }); });
+    (f.onthisday || []).forEach(function(e){ texts.push({ src: 'otd', text: e.text }); });
+    var out = { day: day, texts: texts };
+    store('dayfeed', out);
+    return out;
+  }).catch(function(e){ delete DAILY.feedP[day]; throw e; }));
+}
+
+/* ---------------- sudoku: harder as the week goes on ---------------- */
+var SD_LEVELS = [['Moderate', 30], ['Gentle', 38], ['Gentle', 35], ['Moderate', 32], ['Moderate', 30], ['Tough', 28], ['Tough', 26]];   // Sunday first
+function dailySudoku(){
+  var day = dayKey();
+  if (DAILY.sd[day]) return DAILY.sd[day];
+  var t = todayParts(), L = SD_LEVELS[new Date(Date.UTC(t.y, t.m - 1, t.d)).getUTCDay()];
+  return (DAILY.sd[day] = { day: day, level: L[0], givens: sdGenerate(L[1], NEWS_ENGINE.seedFrom('sudoku:' + day) || 1) });
+}
+
+/* ---------------- the mini crossword ---------------- */
+function getClues(words){
+  return fetch('/api/clues?w=' + words.join(',')).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+}
+/* cb(config for Crossword(), or null). Cached for the day once every clue is in. */
+function dailyMini(cb){
+  var day = dayKey(), saved = store('mini');
+  if (saved && saved.v === 1 && saved.day === day) { cb(saved.cfg); return; }
+  Promise.all([loadWords(), loadDayFeed().catch(function(){ return { texts: [] }; })]).then(function(r){
+    var W = r[0], texts = r[1].texts, banned = new Set(), rounds = 0;
+    (function attempt(){
+      var m = NEWS_ENGINE.makeMini(day, texts, W, isSafeWord, banned);
+      if (!m) { cb(null); return; }
+      var list = m.words.map(function(x){ return x.word; });
+      getClues(list).then(function(res){
+        var clues = res.clues || {}, across = {}, down = {}, redo = [], fromNews = 0;
+        m.words.forEach(function(x){
+          var c = clues[x.word];
+          // a word from today's Wikipedia gets its sentence as the clue, up to twice a puzzle
+          if (fromNews < 2 && m.today.indexOf(x.word) >= 0) { var b = NEWS_ENGINE.blankClue(x.word, texts.filter(function(t){ return t.src === 'tfa' || t.src === 'news' || t.src === 'dyk'; })); if (b) { c = b + ' (Wikipedia today)'; fromNews++; } }
+          if (!c && res.complete) c = NEWS_ENGINE.blankClue(x.word, texts);
+          if (!c && res.complete) redo.push(x.word);
+          (x.dir === 'a' ? across : down)[x.word.toUpperCase()] = c || '(clue on its way)';
+        });
+        if (redo.length && rounds++ < 4) { redo.forEach(function(w){ banned.add(w); }); attempt(); return; }
+        var cfg = { id: 'mini-' + day, grid: m.rows.map(function(row){ return row.toUpperCase(); }), across: across, down: down };
+        if (res.complete && !redo.length) store('mini', { v: 1, day: day, cfg: cfg });
+        cb(cfg);
+      }).catch(function(){ cb(null); });
+    })();
+  }).catch(function(){ cb(null); });
+}
+var handMadeCrossword = BLOCKS.crossword;
+BLOCKS.crossword = function(b){
+  if (!b.daily) return handMadeCrossword(b);
+  var holder = el('div', 'pz-daily');
+  holder.appendChild(txt('p', 'tide-note', 'Making today’s mini crossword…'));
+  dailyMini(function(cfg){
+    holder.innerHTML = '';
+    try {
+      if (cfg) {
+        holder.appendChild(Crossword(cfg));
+        holder.appendChild(txt('p', 'tide-note pz-credit', 'A new mini every day, from Wikipedia’s front page. Clues from Wiktionary (CC BY-SA).'));
+      } else if (b.grid) holder.appendChild(handMadeCrossword(b));
+      else holder.appendChild(txt('p', 'tide-note', 'Today’s crossword needs a connection. It will be here next time you open the paper online.'));
+    } catch (e) { holder.appendChild(txt('p', 'tide-note', 'Today’s crossword could not be drawn.')); }
+  });
+  return holder;
+};
+
+/* ---------------- the word game: six tries at today's five-letter word ---------------- */
+function scoreGuess(guess, answer){
+  var res = ['miss', 'miss', 'miss', 'miss', 'miss'], left = {};
+  for (var i = 0; i < 5; i++) { if (guess[i] === answer[i]) res[i] = 'hit'; else left[answer[i]] = (left[answer[i]] || 0) + 1; }
+  for (var j = 0; j < 5; j++) if (res[j] !== 'hit' && left[guess[j]]) { res[j] = 'near'; left[guess[j]]--; }
+  return res;
+}
+function WordGame(cfg){
+  var day = dayKey(), key = 'wd:' + day, saved = store(key) || {};
+  var guesses = saved.g || [], cur = '', answer = null, W = null, source = null, live = false, msgTimer = null;
+  var root = el('div', 'pz pz-wd'); root.dataset.pz = '';
+  var gridEl = el('div', 'wd-grid'), cells = [];
+  for (var r = 0; r < 6; r++) { var row = el('div', 'wd-row'); for (var c = 0; c < 5; c++) { var d = el('div', 'wd-cell'); row.appendChild(d); cells.push(d); } gridEl.appendChild(row); }
+  var kb = el('div', 'wd-kb'), keys = {};
+  ['qwertyuiop', 'asdfghjkl', '>zxcvbnm<'].forEach(function(line){
+    var kr = el('div', 'wd-kr');
+    line.split('').forEach(function(ch){
+      var b = pzButton(ch === '>' ? 'Enter' : ch === '<' ? '⌫' : ch.toUpperCase(), 'wd-key' + (ch === '>' || ch === '<' ? ' wd-wide' : ''));
+      if (ch === '<') b.setAttribute('aria-label', 'Delete');
+      b.addEventListener('click', function(){ PZ.activate(api); if (ch === '>') submit(); else if (ch === '<') api.erase(); else api.type(ch); });
+      if (ch !== '>' && ch !== '<') keys[ch] = b;
+      kr.appendChild(b);
+    });
+    kb.appendChild(kr);
+  });
+  var status = el('p', 'wd-status');
+  [gridEl, status, kb].forEach(function(x){ root.appendChild(x); });
+  gridEl.addEventListener('click', function(){ PZ.activate(api); });
+
+  function done(){ return !!answer && (guesses.indexOf(answer) >= 0 || guesses.length >= 6); }
+  function say(text, keep){ clearTimeout(msgTimer); status.textContent = text; if (!keep) msgTimer = setTimeout(function(){ if (!done()) status.textContent = ''; }, 2200); }
+  function draw(){
+    var best = {};
+    cells.forEach(function(x){ x.textContent = ''; x.className = 'wd-cell'; });
+    guesses.forEach(function(g, gi){
+      var s = scoreGuess(g, answer);
+      for (var i = 0; i < 5; i++) {
+        var cell = cells[gi * 5 + i]; cell.textContent = g[i].toUpperCase(); cell.classList.add(s[i]);
+        var rank = { hit: 3, near: 2, miss: 1 }[s[i]];
+        if (!best[g[i]] || rank > best[g[i]]) best[g[i]] = rank;
+      }
+    });
+    if (!done()) for (var k = 0; k < cur.length; k++) { var cc = cells[guesses.length * 5 + k]; cc.textContent = cur[k].toUpperCase(); cc.classList.add('typed'); }
+    Object.keys(keys).forEach(function(ch){ keys[ch].className = 'pz-btn wd-key' + (best[ch] ? ' ' + ['', 'miss', 'near', 'hit'][best[ch]] : ''); });
+    root.classList.toggle('solved', guesses.indexOf(answer) >= 0);
+    root.classList.toggle('live', live);
+    if (done()) {
+      status.innerHTML = '';
+      status.appendChild(document.createTextNode(guesses.indexOf(answer) >= 0 ? 'Got it in ' + guesses.length + '. ' : 'Today’s word was ' + answer.toUpperCase() + '. '));
+      if (source && source.link && /^https:\/\//.test(source.link)) {
+        status.appendChild(document.createTextNode('It was in today’s Wikipedia: '));
+        var a = txt('a', null, source.title || 'read more'); a.href = source.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        status.appendChild(a); status.appendChild(document.createTextNode('.'));
+      } else status.appendChild(document.createTextNode('A new word tomorrow.'));
+    }
+  }
+  function submit(){
+    if (!answer || done()) return;
+    if (cur.length < 5) { say('Five letters, please.'); return; }
+    if (!W.all.has(cur)) { say('That’s not in the word list.'); return; }
+    guesses.push(cur); cur = '';
+    store(key, { g: guesses });
+    clearTimeout(msgTimer);
+    status.textContent = done() ? '' : (6 - guesses.length) + (guesses.length === 5 ? ' try' : ' tries') + ' left.';
+    draw();
+    if (done()) PZ.release();
+  }
+  var api = {
+    inputMode: COARSE ? 'none' : 'text',
+    setActive: function(on){ live = on; root.classList.toggle('live', on); },
+    type: function(ch){ ch = String(ch).toLowerCase(); if (!answer || done() || !/^[a-z]$/.test(ch) || cur.length >= 5) return; cur += ch; draw(); },
+    erase: function(){ if (cur) { cur = cur.slice(0, -1); draw(); } },
+    key: function(e){
+      if (e.key === 'Enter') { submit(); return true; }
+      if (e.key === 'Backspace') { api.erase(); return true; }
+      return false;
+    }
+  };
+  say('Loading today’s word…', true);
+  Promise.all([loadWords(), loadDayFeed().catch(function(){ return { texts: [] }; })]).then(function(r){
+    W = r[0];
+    var pick = NEWS_ENGINE.wordleAnswer(day, r[1].texts, W, isSafeWord);
+    answer = pick.word; source = pick.source;
+    guesses = guesses.filter(function(g){ return W.all.has(g); }).slice(0, 6);
+    status.textContent = done() ? '' : 'Guess today’s five-letter word in six tries.';
+    draw();
+  }).catch(function(){ say('The word game needs a connection the first time each day.', true); });
+  return root;
+}
+BLOCKS.wordle = function(b){ return WordGame(b); };
+
 
 /* =========================================================
    ALMANAC: worked out in the reader's own browser.
@@ -2595,7 +3131,12 @@ loadAlmanac(ISSUE, liveUpdated);       // date, sun and moon now; tides and weat
 /* The news: shown as soon as it's here, refreshed when the hour turns, never while someone is reading. */
 function showNews(){ if (newsBusy()) { NEWS.pending = true; return; } NEWS.pending = false; hooks.rerender(); refreshLive(); }
 loadNews(showNews);
-setInterval(function(){ loadNews(showNews); if (NEWS.pending) showNews(); }, 30000);
+var shownDay = dayKey();
+setInterval(function(){
+  loadNews(showNews);
+  if (dayKey() !== shownDay && !newsBusy()) { shownDay = dayKey(); hooks.rerender(); }    // midnight: today's puzzles
+  else if (NEWS.pending) showNews();
+}, 30000);
 applyTheme(ISSUE);
 buildSheets(ISSUE);
 measure();

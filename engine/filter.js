@@ -54,7 +54,7 @@ export const RULES = [
     key: 'suicide', label: 'Suicide and self-harm', action: 'note', note: 'This story discusses suicide.',
     patterns: [
       'suicid\\w*(?![ -](?:bomb|attack|drone|vest|car|truck|mission|squad))', 'self[- ]harm\\w*', 'took (?:his|her|their) own lives?', 'took (?:his|her|their) own life', 'killed (?:himself|herself|themselves)',
-      'kill (?:himself|herself|themselves)', 'overdosed? on purpose'
+      'kill (?:himself|herself|themselves|yourself|myself)', 'kys', 'overdosed? on purpose'
     ]
   },
   {

@@ -14,7 +14,7 @@
 
 A newspaper website that looks and feels like a real paper, with the world's news
 in it, refreshed every hour. Readers turn the pages by dragging them, fold the paper
-in half, zoom in, read any story in large type, and play the crossword and sudoku
+in half, zoom in, read any story in large type, and play a new mini crossword, word game and sudoku every day
 right on the page. The date, sunrise and weather are each reader's own.
 
 Editors sign in with a password and change everything from the browser: stories,
@@ -84,6 +84,31 @@ Tap a puzzle and the paper zooms in so the grid is easy to use. Progress is save
 on the reader's own device, so they can come back to it later. If the editor
 changes the puzzle, saved progress for it starts fresh.
 
+**New puzzles every day.** At midnight in each reader's own time zone the paper
+makes a new mini crossword, word game and sudoku. Everyone gets the same puzzles
+on the same date. They're made in the reader's browser by plain rules (no AI),
+from these sources:
+
+- **The words:** today's word and some of the crossword's answers come from
+  Wikipedia's front page for that day: the featured article, In the news and the
+  most-read articles. Only plain words written in lower case are used, so no names.
+  Everything else comes from a list of everyday English words.
+- **The checks:** every answer passes the same content filter as the news.
+- **The clues:** they come from Wiktionary, the free dictionary, using each word's
+  main meaning. A clue never contains the answer, and senses marked slang or
+  crude are skipped. Up to two clues are a sentence from today's Wikipedia
+  with the word blanked out.
+- **The word game:** after you finish, it links to the Wikipedia article the word came from.
+- **The sudoku:** it gets harder through the week, Gentle on Monday and Tough by Saturday.
+  `{{sudokuLevel}}` prints today's level.
+- **Making them:** each takes a few milliseconds. The word list (`/words.txt`, about 45 KB)
+  loads only when the puzzles page is drawn.
+- **Word lists and notices:** see [docs/word-lists.md](docs/word-lists.md).
+
+In the newsroom, tick **A new … every day** on a crossword or sudoku. Use the
+**Word game (daily)** block for the word game. A hand-made crossword still works
+as before, and is shown if the daily one can't be made, for example offline.
+
 **Crossword**
 - **Type:** tap a square and type. The cursor moves along the word as you go.
 - **Switch direction:** tap the same square again, or press Space, to flip between Across and Down.
@@ -95,6 +120,10 @@ changes the puzzle, saved progress for it starts fresh.
 - **Notes:** switch on **Notes** (or press N) to pencil in small candidate numbers.
 - **Highlights:** the row, column and box light up, matching numbers are highlighted, and clashing numbers turn red.
 - **Buttons:** **Check** marks wrong answers, and **Clear** (tap twice) starts over.
+
+**Word game**
+- **Guess:** type a five-letter word (or use the keys under the grid) and press Enter. You have six tries.
+- **Colours:** dark means the right letter in the right place, red means it's in the word somewhere else, and grey means it isn't in the word.
 
 **Word search**
 - **Find a word:** drag across its letters in any direction, or tap the first letter and then the last.
@@ -496,7 +525,7 @@ drafts stay in their browsers.
 
 - **No reader cookies:** readers get no accounts and no tracking. The only cookie is the editor's sign-in cookie.
 - **Puzzle progress and cached data** are kept only in the reader's own browser.
-- **Outside services:** readers' browsers connect directly to NOAA (tides), the US National Weather Service or Open-Meteo (weather), BigDataCloud (to find the reader's town from their connection), and Google Fonts (typefaces). Those services see the reader's IP address, as they would for any website using them.
+- **Outside services:** readers' browsers connect directly to Wikipedia (the day's front page, for the puzzles), NOAA (tides), the US National Weather Service or Open-Meteo (weather), BigDataCloud (to find the reader's town from their connection), and Google Fonts (typefaces). Those services see the reader's IP address, as they would for any website using them.
 - **The news:** readers' browsers fetch it from the paper's own site (`/api/news`), never from the outlets. Only the Cloudflare function contacts the news sites. A reader's browser connects to an outlet only when the reader opens one of its links.
 - **Location:** the paper never asks for a reader's location by itself. Only the **Use my exact location** button does, and the coordinates are rounded to about 1 km before being sent to the weather and town-name services. The reader's town is remembered only in their own browser.
 
@@ -594,8 +623,13 @@ engine/places.js        works out which region a story is about
 engine/cluster.js       spots the same event reported by different outlets
 engine/combine.js       merges, ranks and picks the stories for each section (also runs in browsers)
 engine/edition.js       fetches and processes a part of the feeds; builds the whole edition
+engine/puzzles.js       the daily word game's word and the mini crossword (also runs in browsers)
+engine/clues.js         picks crossword clues from Wiktionary
 engine/test.js          checks for all of the above (node engine/test.js)
+src/daily.js            the daily puzzles in the paper: sudoku, word game, mini crossword
+public/words.txt        word lists for the puzzles (docs/word-lists.md)
 functions/api/news/     the Cloudflare Pages Function that serves the hourly news
+functions/api/clues.js  the Cloudflare Pages Function that serves crossword clues
 public/                 paper.css, sign-in page, icons, app manifest
 admin/editor.css        newsroom styles (signed-in editors only)
 views/                  HTML for the paper, the sign-in page, the newsroom and the static website
@@ -620,6 +654,7 @@ Dockerfile, compose.yaml, Caddyfile   container and HTTPS setup
 | `GET /api/site`, `POST /api/site/publish` | Website status; publish it now | Editors |
 | `GET /api/news/:part` | One part of this hour's news (`0` to `5`, or `extras`) | Anyone |
 | `GET /api/news/:part?include=filtered` | The same, plus what the filter took out | Editors |
+| `GET /api/clues?w=word,word` | Crossword clues from Wiktionary, cached for a month | Anyone |
 | `GET /healthz` | "ok" when the server is running | Anyone |
 
 ### The edition file

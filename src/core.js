@@ -188,7 +188,7 @@ var LIVE_TOKENS = [
   ['temp', 'Temperature now'], ['conditions', 'Sky right now'], ['forecast', 'Short forecast'],
   ['high', 'Today’s high'], ['low', 'Tonight’s low'], ['tonight', 'Tonight'],
   ['tomorrowWeather', 'Tomorrow’s weather'], ['dayAfterWeather', 'The day after'], ['weatherPlace', 'Where the weather is for'],
-  ['updated', 'When the news was last updated']
+  ['updated', 'When the news was last updated'], ['sudokuLevel', 'How hard today’s sudoku is']
 ];
 var TOKEN_RE = /\{\{\s*(\w+)\s*\}\}/g;
 function liveTZ(){ return (ALMANAC && ALMANAC.timeZone) || 'America/New_York'; }
@@ -232,6 +232,7 @@ function liveValues(){
     moon: A.moon ? A.moon.phase : '—', moonLit: A.moon ? A.moon.illumination + '%' : '—',
     weatherPlace: A.placeName || '—',
     updated: newsUpdatedText(),
+    sudokuLevel: dailySudoku().level,
     temp: wx(function(W){ return W.current.temp + '°'; }),
     conditions: wx(function(W){ return W.current.text; }),
     forecast: wx(function(W){ return W.forecast; }),
@@ -807,6 +808,7 @@ var PEERS = [];
 })();
 
 function Sudoku(cfg){
+  if (cfg.daily) { var today = dailySudoku(); cfg = { id: (cfg.id || 'sd') + '-' + today.day, givens: today.givens }; }   // a new one every day
   var giv = sdParse(cfg.givens);
   if (giv.length !== 81) throw new Error('the puzzle needs 81 squares, it has ' + giv.length);
   var sol = new Array(81).fill(0);
