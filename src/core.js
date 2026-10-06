@@ -64,8 +64,8 @@ function loadFont(family){
   document.head.appendChild(l);
 }
 function applyTheme(issue){
-  var t = themeOf(issue), rs = document.documentElement.style;
-  Object.keys(COLOR_VAR).forEach(function(k){ rs.setProperty(COLOR_VAR[k], t.colors[k]); });
+  var t = themeOf(issue), rs = document.documentElement.style, colors = nightColors(t.colors);
+  Object.keys(COLOR_VAR).forEach(function(k){ rs.setProperty(COLOR_VAR[k], colors[k]); });
   FONT_ROLES.forEach(function(r){ loadFont(t.fonts[r[0]]); rs.setProperty('--f-' + r[0], '"' + t.fonts[r[0]] + '",' + FALLBACK[r[0]]); });
 }
 
@@ -1236,13 +1236,15 @@ function buildSheets(issue){
   finishCurl();                                   // never leave a half-turned page behind a redraw
   sheets.forEach(function(s){ s.remove(); });
   BID = 0; BIDMAP = {}; LIVE_NODES = []; NEWS.used = {};
-  var pages = issue.pages || [], m = issue.masthead || {};
+  var pages = clipOrder(issue.pages || []), m = issue.masthead || {};     // clipped pages come first
+  NEWS.pages = pages;
   NEWS.fontsPending = !!(document.fonts && document.fonts.status !== 'loaded');
   // one page at a time: each news page is fitted before the next picks its stories
   sheets = pages.map(function(p, i){
     var s = renderPage(p, i, pages.length, m, issue);
     book.appendChild(s);
     if (p.news) fitNewsSheet(s);
+    decoratePageClip(s, p, i);
     applyLive(s);
     return s;
   });
@@ -1285,7 +1287,7 @@ function paint(){
   });
   pageRead.innerHTML = N ? '<span class="long">Page </span>' + (idx + 1) + '<span class="long"> of </span><span class="short">/</span>' + N : 'No pages';
   prevBtn.disabled = idx === 0; nextBtn.disabled = idx >= N - 1;
-  [].forEach.call(dots.children, function(b, i){ b.className = i === idx ? 'on' : ''; });
+  [].forEach.call(dots.children, function(b, i){ b.className = (i === idx ? 'on' : '') + (sheets[i] && sheets[i].querySelector('.page-clip.on') ? ' clipped' : ''); });
   if (hooks.onPage) hooks.onPage(idx);
 }
 function go(step){
@@ -1492,6 +1494,7 @@ function wireView(){
   book.addEventListener('click', function(e){
     if (isEditing() || stage.__justDragged) return;
     var c = e.target.closest('.corner'); if (c) { go(parseInt(c.dataset.nav, 10)); return; }
+    var pc = e.target.closest('.page-clip'); if (pc) { togglePageClip(pc); return; }
     if (e.target.closest('[data-pz], .wx-locate')) return;
     var gt = e.target.closest('[data-goto]');
     if (gt && zoom <= 1.02) { goTo(parseInt(gt.dataset.goto, 10)); return; }

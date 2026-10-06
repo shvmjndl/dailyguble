@@ -272,7 +272,7 @@ const ENGINE_JS = engineForBrowser();
 const bundle = (...files) => '(function(){"use strict";\n' + [read('src/themes.js'), read('src/brand.js'), ENGINE_JS].concat(files.map(read)).join('\n') + '\n})();\n';
 const PUBLIC_ASSETS = {
   '/paper.css': asset(read('public/paper.css'), 'text/css; charset=utf-8'),
-  '/paper.js': asset(bundle('src/core.js', 'src/news.js', 'src/daily.js', 'src/almanac.js', 'src/reader.js'), 'text/javascript; charset=utf-8'),
+  '/paper.js': asset(bundle('src/core.js', 'src/news.js', 'src/daily.js', 'src/clips.js', 'src/almanac.js', 'src/reader.js'), 'text/javascript; charset=utf-8'),
   '/login.css': asset(read('public/login.css'), 'text/css; charset=utf-8'),
   '/login.js': asset(read('public/login.js'), 'text/javascript; charset=utf-8'),
   '/favicon.svg': asset(read('public/favicon.svg'), 'image/svg+xml'),
@@ -285,7 +285,7 @@ const PUBLIC_ASSETS = {
 };
 const ADMIN_ASSETS = {
   '/admin/editor.css': asset(read('admin/editor.css'), 'text/css; charset=utf-8'),
-  '/admin/editor.js': asset(bundle('src/core.js', 'src/news.js', 'src/daily.js', 'src/almanac.js', 'src/editor.js'), 'text/javascript; charset=utf-8')
+  '/admin/editor.js': asset(bundle('src/core.js', 'src/news.js', 'src/daily.js', 'src/clips.js', 'src/almanac.js', 'src/editor.js'), 'text/javascript; charset=utf-8')
 };
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function paperTitle() {

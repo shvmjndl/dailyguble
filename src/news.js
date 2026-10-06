@@ -70,7 +70,13 @@ function newsQueue(name, page, issue){
   if (page.locked && page.locked.stories) return page.locked.stories.slice();
   if (!P) return [];
   var parts = name.split(':'), sec = parts[0], region = parts[1], list;
-  if (sec === 'front') list = P.front || [];
+  if (sec === 'front') {
+    list = P.front || [];
+    var pref = preferredSections();
+    if (Object.keys(pref).length) list = list.map(function(s, i){                       // the reader's clipped sections lead more often
+      return { s: s, i: i, v: (s.score || 0) + ((s.sections || []).some(function(x){ return pref[x]; }) ? 4 : 0) };
+    }).sort(function(a, b){ return b.v - a.v || a.i - b.i; }).map(function(x){ return x.s; });
+  }
   else list = (P.sections || {})[sec] || [];
   if (sec === 'world' && region !== 'india') list = list.filter(function(s){ return s.region !== 'india'; });   // India has its own page
   if (region) list = list.filter(function(s){ return s.region === region; });
@@ -245,7 +251,7 @@ BLOCKS.briefs = function(b){
   return ul;
 };
 BLOCKS.inside = function(){
-  var d = el('div', 'box inside'), pages = (hooks.issue ? hooks.issue() : ISSUE).pages || [];
+  var d = el('div', 'box inside'), pages = NEWS.pages || (hooks.issue ? hooks.issue() : ISSUE).pages || [];
   d.appendChild(el('h6', 'sect', 'Inside today'));
   var ul = el('ul', 'inside-list');
   pages.forEach(function(p, i){

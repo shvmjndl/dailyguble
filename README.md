@@ -129,6 +129,25 @@ as before, and is shown if the daily one can't be made, for example offline.
 - **Find a word:** drag across its letters in any direction, or tap the first letter and then the last.
 - **Found words** are crossed off the list.
 
+### Clip the pages you like
+
+Tap the top-right corner of any page to put a paper clip on it, as you would on
+a real paper. A clip means "I like this page's news":
+
+- **It moves up:** the page comes right after the front page. Several clipped pages
+  go in the order you clipped them.
+- **The front page leans your way:** stories from that page's sections lead more often.
+- **It stays:** the clip remains through every hourly update and every visit, until
+  you tap it again to take it off.
+
+Clipped pages are marked in the page dots. Clips are kept only in your own browser.
+
+### Night edition
+
+After sunset where you are, the paper turns to dark newsprint, and it goes back at
+sunrise. The button at the right of the toolbar cycles through **Auto** (dark after
+sunset), **Dark** and **Day**, and the paper remembers your choice.
+
 ### Phones and tablets
 
 - **Devices:** works on iPhone, Android phones and iPad, held upright or sideways.

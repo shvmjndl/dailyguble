@@ -65,7 +65,7 @@ export function combine(parts, extras = {}, { now = Date.now() } = {}) {
     const primary = (section && c.members.find((m) => m.sections.has(section))) || c.members[0];
     const others = [], seen = new Set([primary.outlet]);
     for (const m of c.members) if (!seen.has(m.outlet) && others.length < 3) { seen.add(m.outlet); others.push({ outlet: m.outlet, title: m.title, link: m.link }); }
-    const extra = { outlets: c.outlets, score: Math.round(c.score * 10) / 10 };
+    const extra = { outlets: c.outlets, score: Math.round(c.score * 10) / 10, sections: [...c.sections] };
     if (c.region) extra.region = c.region;
     if (c.note) extra.note = c.note;
     if (others.length) extra.others = others;

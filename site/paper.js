@@ -327,7 +327,7 @@ function combine(parts, extras = {}, { now = Date.now() } = {}) {
     const primary = (section && c.members.find((m) => m.sections.has(section))) || c.members[0];
     const others = [], seen = new Set([primary.outlet]);
     for (const m of c.members) if (!seen.has(m.outlet) && others.length < 3) { seen.add(m.outlet); others.push({ outlet: m.outlet, title: m.title, link: m.link }); }
-    const extra = { outlets: c.outlets, score: Math.round(c.score * 10) / 10 };
+    const extra = { outlets: c.outlets, score: Math.round(c.score * 10) / 10, sections: [...c.sections] };
     if (c.region) extra.region = c.region;
     if (c.note) extra.note = c.note;
     if (others.length) extra.others = others;
@@ -772,8 +772,8 @@ function loadFont(family){
   document.head.appendChild(l);
 }
 function applyTheme(issue){
-  var t = themeOf(issue), rs = document.documentElement.style;
-  Object.keys(COLOR_VAR).forEach(function(k){ rs.setProperty(COLOR_VAR[k], t.colors[k]); });
+  var t = themeOf(issue), rs = document.documentElement.style, colors = nightColors(t.colors);
+  Object.keys(COLOR_VAR).forEach(function(k){ rs.setProperty(COLOR_VAR[k], colors[k]); });
   FONT_ROLES.forEach(function(r){ loadFont(t.fonts[r[0]]); rs.setProperty('--f-' + r[0], '"' + t.fonts[r[0]] + '",' + FALLBACK[r[0]]); });
 }
 
@@ -1944,13 +1944,15 @@ function buildSheets(issue){
   finishCurl();                                   // never leave a half-turned page behind a redraw
   sheets.forEach(function(s){ s.remove(); });
   BID = 0; BIDMAP = {}; LIVE_NODES = []; NEWS.used = {};
-  var pages = issue.pages || [], m = issue.masthead || {};
+  var pages = clipOrder(issue.pages || []), m = issue.masthead || {};     // clipped pages come first
+  NEWS.pages = pages;
   NEWS.fontsPending = !!(document.fonts && document.fonts.status !== 'loaded');
   // one page at a time: each news page is fitted before the next picks its stories
   sheets = pages.map(function(p, i){
     var s = renderPage(p, i, pages.length, m, issue);
     book.appendChild(s);
     if (p.news) fitNewsSheet(s);
+    decoratePageClip(s, p, i);
     applyLive(s);
     return s;
   });
@@ -1993,7 +1995,7 @@ function paint(){
   });
   pageRead.innerHTML = N ? '<span class="long">Page </span>' + (idx + 1) + '<span class="long"> of </span><span class="short">/</span>' + N : 'No pages';
   prevBtn.disabled = idx === 0; nextBtn.disabled = idx >= N - 1;
-  [].forEach.call(dots.children, function(b, i){ b.className = i === idx ? 'on' : ''; });
+  [].forEach.call(dots.children, function(b, i){ b.className = (i === idx ? 'on' : '') + (sheets[i] && sheets[i].querySelector('.page-clip.on') ? ' clipped' : ''); });
   if (hooks.onPage) hooks.onPage(idx);
 }
 function go(step){
@@ -2200,6 +2202,7 @@ function wireView(){
   book.addEventListener('click', function(e){
     if (isEditing() || stage.__justDragged) return;
     var c = e.target.closest('.corner'); if (c) { go(parseInt(c.dataset.nav, 10)); return; }
+    var pc = e.target.closest('.page-clip'); if (pc) { togglePageClip(pc); return; }
     if (e.target.closest('[data-pz], .wx-locate')) return;
     var gt = e.target.closest('[data-goto]');
     if (gt && zoom <= 1.02) { goTo(parseInt(gt.dataset.goto, 10)); return; }
@@ -2425,7 +2428,13 @@ function newsQueue(name, page, issue){
   if (page.locked && page.locked.stories) return page.locked.stories.slice();
   if (!P) return [];
   var parts = name.split(':'), sec = parts[0], region = parts[1], list;
-  if (sec === 'front') list = P.front || [];
+  if (sec === 'front') {
+    list = P.front || [];
+    var pref = preferredSections();
+    if (Object.keys(pref).length) list = list.map(function(s, i){                       // the reader's clipped sections lead more often
+      return { s: s, i: i, v: (s.score || 0) + ((s.sections || []).some(function(x){ return pref[x]; }) ? 4 : 0) };
+    }).sort(function(a, b){ return b.v - a.v || a.i - b.i; }).map(function(x){ return x.s; });
+  }
   else list = (P.sections || {})[sec] || [];
   if (sec === 'world' && region !== 'india') list = list.filter(function(s){ return s.region !== 'india'; });   // India has its own page
   if (region) list = list.filter(function(s){ return s.region === region; });
@@ -2600,7 +2609,7 @@ BLOCKS.briefs = function(b){
   return ul;
 };
 BLOCKS.inside = function(){
-  var d = el('div', 'box inside'), pages = (hooks.issue ? hooks.issue() : ISSUE).pages || [];
+  var d = el('div', 'box inside'), pages = NEWS.pages || (hooks.issue ? hooks.issue() : ISSUE).pages || [];
   d.appendChild(el('h6', 'sect', 'Inside today'));
   var ul = el('ul', 'inside-list');
   pages.forEach(function(p, i){
@@ -2895,6 +2904,126 @@ function WordGame(cfg){
 }
 BLOCKS.wordle = function(b){ return WordGame(b); };
 
+/* =========================================================
+   PAPER CLIPS — a reader clips a page to mark it, the way you'd clip a
+   page of a real paper. The clip sits on the page's top-right corner and
+   stays (in this browser) until the reader takes it off. Any number of
+   pages can be clipped. Tap the corner to clip; tap the clip to remove it.
+   ========================================================= */
+var CLIP_SVG = '<svg viewBox="-3 -2 30 70" aria-hidden="true" focusable="false"><defs><linearGradient id="clipMetal" x1="0" x2="1">' +
+  '<stop offset="0" stop-color="#8d939a"/><stop offset=".45" stop-color="#eef1f4"/><stop offset=".7" stop-color="#b9bfc6"/><stop offset="1" stop-color="#6f757c"/></linearGradient></defs>' +
+  '<path d="M16 20 V50 a5 5 0 0 1 -10 0 V9 a7.5 7.5 0 0 1 15 0 V54 a10.5 10.5 0 0 1 -21 0 V17" fill="none" stroke="url(#clipMetal)" stroke-width="2.6" stroke-linecap="round"/></svg>';
+/* Which page this is, in a way that survives the hourly news: the kind of page, or its section name. */
+function pageClipKey(page, i){ return page.news ? 'news:' + page.news : 'page:' + (plain((page.runhead || {}).center) || (page.plate ? 'front' : String(i))); }
+function clippedPages(){ return store('page-clips') || []; }
+function isPageClipped(key){ return clippedPages().indexOf(key) >= 0; }
+function setPageClip(key, on){
+  var list = clippedPages().filter(function(k){ return k !== key; });
+  if (on) list.push(key);
+  store('page-clips', list.length ? list : null);
+}
+/* Put the clip (or the faint outline where it goes) on a freshly drawn page. */
+function decoratePageClip(sheet, page, i){
+  if (!hooks.clips) return;
+  var key = pageClipKey(page, i), b = el('button', 'page-clip' + (isPageClipped(key) ? ' on' : ''), CLIP_SVG);
+  b.type = 'button'; b.dataset.clip = key;
+  b.setAttribute('aria-pressed', isPageClipped(key) ? 'true' : 'false');
+  b.setAttribute('aria-label', isPageClipped(key) ? 'Take the clip off this page' : 'Clip this page');
+  sheet.querySelector('.face').appendChild(b);
+}
+function togglePageClip(btn){
+  var key = btn.dataset.clip, on = !isPageClipped(key), page = (NEWS.pages || [])[idx];
+  setPageClip(key, on);
+  // redraw in the new order, staying on this same page
+  var order = clipOrder(((hooks.issue ? hooks.issue() : ISSUE).pages) || []);
+  if (page && order.indexOf(page) >= 0) idx = order.indexOf(page);
+  if (hooks.rerender) hooks.rerender();
+  var name = page && page.news ? newsKindName(page.news) : '';
+  toast(on ? (name && page.news !== 'front' ? 'Clipped. ' + name + ' now comes right after the front page, and leads more often.' : 'Page clipped. The clip stays until you take it off.')
+           : 'Clip taken off.');
+}
+function wireClips(){ hooks.clips = true; }
+
+/*
+ * A clip is a preference: the reader likes that page's news. Clipped pages move up to
+ * just after the front page (in the order they were clipped), and the front page gives
+ * their sections' stories a lift.
+ */
+var CLIP_SECTIONS = { world: ['world'], india: ['india'], business: ['business'], science: ['science', 'tech', 'health', 'climate'], opinion: ['opinion'], sport: ['sport', 'culture'] };
+function clipOrder(pages){
+  var clipped = clippedPages();
+  if (!hooks.clips || !clipped.length || pages.length < 3) return pages;
+  var rest = pages.slice(1), picked = [];
+  clipped.forEach(function(k){ rest.forEach(function(p, i){ if (picked.indexOf(p) < 0 && pageClipKey(p, i + 1) === k) picked.push(p); }); });
+  return pages.slice(0, 1).concat(picked, rest.filter(function(p){ return picked.indexOf(p) < 0; }));
+}
+function preferredSections(){
+  var out = {};
+  if (!hooks.clips) return out;
+  clippedPages().forEach(function(k){ var m = k.match(/^news:(\w+)$/); if (m && CLIP_SECTIONS[m[1]]) CLIP_SECTIONS[m[1]].forEach(function(s){ out[s] = 1; }); });
+  return out;
+}
+function toast(text){
+  var t = document.getElementById('toast');
+  clearTimeout(toast.timer);
+  t.textContent = text; t.hidden = false;
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  toast.timer = setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ t.hidden = true; }, 400); }, 3200);
+}
+
+/* =========================================================
+   NIGHT EDITION — dark newsprint from sunset to sunrise, where the
+   reader is (the sun times come from almanac.js). A button switches
+   between automatic, always night and always day.
+   ========================================================= */
+var NIGHT = { mode: store('night') || 'auto', on: false };
+var NIGHT_COLORS = { paper: '#22201b', paperLit: '#2b2822', ink: '#e8dfca', inkSoft: '#ab9f88', rule: '#4b4438', accent: '#e58a6f',
+  cell: '#2d2a23', sel: '#7c5d1f', hl: '#344652', hlSoft: '#2c3236', pen: '#9fc4ff' };
+function nightNow(){
+  if (NIGHT.mode === 'on') return true;
+  if (NIGHT.mode === 'off') return false;
+  var A = ALMANAC || {}, now = Date.now();
+  if (A.sunrise && A.sunset) return now < Date.parse(A.sunrise) || now >= Date.parse(A.sunset);
+  var h = new Date().getHours();
+  return h >= 19 || h < 6;
+}
+/* Called by applyTheme: night colours over the edition's own. */
+function nightColors(colors){
+  NIGHT.on = !!hooks.night && nightNow();
+  document.documentElement.classList.toggle('night', NIGHT.on);
+  return NIGHT.on ? Object.assign({}, colors, NIGHT_COLORS) : colors;
+}
+function nightLabel(){
+  var b = document.getElementById('nightBtn');
+  if (!b) return;
+  var word = NIGHT.mode === 'auto' ? 'Auto' : NIGHT.mode === 'on' ? 'Dark' : 'Day';
+  b.querySelector('.long').textContent = (NIGHT.on ? '☾ ' : '☀ ') + word;
+  b.querySelector('.short').textContent = (NIGHT.mode === 'auto' ? 'A' : '') + (NIGHT.on ? '☾' : '☀');
+  b.setAttribute('aria-label', 'Paper: ' + (NIGHT.mode === 'auto' ? 'automatic, dark after sunset' : NIGHT.mode === 'on' ? 'always dark' : 'always day') + '. Tap to change.');
+  b.setAttribute('aria-pressed', NIGHT.on ? 'true' : 'false');
+}
+/* Re-check (after the sun times arrive, and every minute). */
+function updateNight(){
+  if (!hooks.night) return;
+  if (nightNow() !== NIGHT.on) applyTheme(hooks.issue ? hooks.issue() : ISSUE);
+  nightLabel();
+}
+function wireNight(){
+  hooks.night = true;
+  var grp = el('div', 'grp');
+  grp.innerHTML = '<button class="ctl" id="nightBtn" type="button"><span class="long"></span><span class="short"></span></button>';
+  var bar = document.querySelector('.bar'), fold = document.getElementById('foldBtn').parentNode;
+  bar.insertBefore(grp, fold.nextSibling);
+  document.getElementById('nightBtn').addEventListener('click', function(){
+    NIGHT.mode = { auto: 'on', on: 'off', off: 'auto' }[NIGHT.mode] || 'auto';      // Auto → Dark → Day → Auto
+    store('night', NIGHT.mode === 'auto' ? null : NIGHT.mode);
+    applyTheme(hooks.issue ? hooks.issue() : ISSUE);
+    nightLabel();
+    toast(NIGHT.mode === 'auto' ? 'Auto: the paper turns dark at sunset where you are, and light at sunrise.' : NIGHT.mode === 'on' ? 'Dark paper, always.' : 'Day paper, always.');
+  });
+  nightLabel();
+}
+
 
 /* =========================================================
    ALMANAC: worked out in the reader's own browser.
@@ -3125,19 +3254,23 @@ function loadAlmanac(issue, onUpdate){
 /* Reader bundle: draw today's edition and wire the controls. */
 mountShell();
 wireView();
+wireClips();                            // readers can clip pages, like a real paper
+wireNight();                            // dark newsprint after sunset
 hooks.issue = function(){ return ISSUE; };
 hooks.rerender = function(){ buildSheets(ISSUE); measure(); };
-loadAlmanac(ISSUE, liveUpdated);       // date, sun and moon now; tides and weather as they arrive
+loadAlmanac(ISSUE, function(){ liveUpdated(); updateNight(); });   // date, sun and moon now; tides and weather as they arrive
 /* The news: shown as soon as it's here, refreshed when the hour turns, never while someone is reading. */
 function showNews(){ if (newsBusy()) { NEWS.pending = true; return; } NEWS.pending = false; hooks.rerender(); refreshLive(); }
 loadNews(showNews);
 var shownDay = dayKey();
 setInterval(function(){
   loadNews(showNews);
+  updateNight();
   if (dayKey() !== shownDay && !newsBusy()) { shownDay = dayKey(); hooks.rerender(); }    // midnight: today's puzzles
   else if (NEWS.pending) showNews();
 }, 30000);
 applyTheme(ISSUE);
+nightLabel();
 buildSheets(ISSUE);
 measure();
 startLiveClock();

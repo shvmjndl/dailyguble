@@ -538,3 +538,25 @@ body.editing .reader-sheet{user-select:text}
 .pz-wd.live .wd-grid{outline:2px solid var(--press-red);outline-offset:3px}
 .pz-credit{text-align:center}
 .pz-daily .cw-clues{grid-template-columns:1fr;gap:6px}
+
+/* ---------- paper clips on pages ---------- */
+.page-clip{position:absolute;top:-6px;right:58px;width:26px;height:62px;z-index:9;padding:0;border:0;background:none;cursor:pointer;
+  transform:rotate(7deg);transform-origin:50% 0;opacity:.16;filter:grayscale(1);transition:opacity .2s ease,transform .25s ease}
+.page-clip svg{display:block;width:100%;height:100%}
+.page-clip:hover{opacity:.42}
+.page-clip.on{opacity:1;filter:drop-shadow(1px 2px 1.5px rgba(0,0,0,.35));transform:rotate(7deg) translateY(2px)}
+.page-clip.on:hover{opacity:.9}
+.page-clip:focus-visible{outline:2px solid var(--press-red);outline-offset:2px}
+@media (pointer:coarse){ .page-clip{width:30px;height:70px;opacity:.22} .page-clip.on{opacity:1} }
+body.editing .page-clip{display:none}
+.dots b.clipped{box-shadow:0 0 0 2px #c9ced4}
+
+/* ---------- the night edition: dark newsprint after sunset ---------- */
+html.night .grain{opacity:.4}
+html.night .crease{opacity:.55}
+html.night .stack i:nth-child(1){background:color-mix(in srgb, var(--paper) 85%, #000)}
+html.night .stack i:nth-child(2){background:color-mix(in srgb, var(--paper) 70%, #000)}
+html.night .reader-sheet{box-shadow:0 18px 50px rgba(0,0,0,.7),inset 0 0 90px rgba(0,0,0,.35)}
+html.night .wd-cell.hit,html.night .wd-key.hit{color:#1c1a16}
+html.night .ear-weather,html.night .nameplate h1{color:var(--ink)}
+.paper,.reader-sheet,.stack i{transition:background-color .6s ease,color .6s ease}
