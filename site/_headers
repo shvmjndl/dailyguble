@@ -3,7 +3,7 @@
   Referrer-Policy: no-referrer
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=()
-  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://api.tidesandcurrents.noaa.gov https://api.weather.gov https://api.open-meteo.com https://api-bdc.io; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.tidesandcurrents.noaa.gov https://api.weather.gov https://api.open-meteo.com https://api-bdc.io; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'none'
 /
   Cache-Control: no-cache
 /index.html
@@ -16,3 +16,5 @@
   Cache-Control: public, max-age=31536000, immutable
 /*.png
   Cache-Control: public, max-age=604800
+/news-settings.json
+  Cache-Control: no-cache

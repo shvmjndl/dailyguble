@@ -53,6 +53,318 @@ function fontsHref(families){
 var BRAND_BADGE = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\" aria-hidden=\"true\" focusable=\"false\"><clipPath id=\"guble-disc\"><circle cx=\"256\" cy=\"256\" r=\"256\"/></clipPath><g clip-path=\"url(#guble-disc)\"><rect width=\"512\" height=\"512\" fill=\"#e7e1d1\"/><path d=\"M236 135 L40 65 L40 157 Z M276 135 L472 65 L472 157 Z\" fill=\"#f2b53c\" opacity=\".42\"/><path d=\"M204.0 392 L224.0 170 L288.0 170 L308.0 392 Z M202 170 h108 v-12 h-108 Z M220 158 V112 H292 V158 Z M210 112 L256 66 L302 112 Z\" fill=\"#17150f\"/><path d=\"M212.3 300 L216.6 252 L295.4 252 L299.7 300 Z\" fill=\"#95291c\"/><path d=\"M234 150 V120 H278 V150 Z\" fill=\"#f6d77a\"/><rect x=\"0\" y=\"392\" width=\"512\" height=\"14\" fill=\"#17150f\"/><path d=\"M64 420 q24 -14 48 0 t48 0 t48 0 t48 0 t48 0 t48 0 t48 0 t48 0\" fill=\"none\" stroke=\"#17150f\" stroke-width=\"10\" stroke-linecap=\"round\"/><path d=\"M64 452 q24 -14 48 0 t48 0 t48 0 t48 0 t48 0 t48 0 t48 0 t48 0\" fill=\"none\" stroke=\"#17150f\" stroke-width=\"10\" stroke-linecap=\"round\"/></g></svg>";
 var BRAND_WORDMARK_DARK = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 703 284\" aria-hidden=\"true\" focusable=\"false\"><g transform=\"translate(33.2,196.0)\"><path d=\"M464.4 -152.2 L-11.0 -185.2 L-11.0 -143.9 Z\" fill=\"#f2b53c\" opacity=\".45\"/><path d=\"M58.96 57.2Q48.62 57.2 38.61 55.825Q28.6 54.45 20.405 51.480000000000004Q12.21 48.51 7.315 43.67Q2.42 38.83 2.42 31.9Q2.42 25.63 6.93 21.725Q11.44 17.82 17.985 15.73Q24.53 13.64 30.855 12.870000000000001Q37.18 12.1 40.92 12.1H41.36Q38.94 13.31 36.629999999999995 17.82Q34.32 22.330000000000002 34.32 28.49Q34.32 35.97 37.730000000000004 42.295Q41.14 48.62 48.400000000000006 52.36Q55.660000000000004 56.1 67.32000000000001 56.1Q73.48 56.1 80.795 54.89Q88.11 53.68 94.765 50.875Q101.42 48.07 105.71000000000001 43.230000000000004Q110.0 38.39 110.0 31.13Q110.0 22.99 104.995 19.14Q99.99 15.290000000000001 92.62 14.135000000000002Q85.25 12.98 78.1 12.98Q75.79 12.98 70.45500000000001 12.98Q65.12 12.98 59.785000000000004 12.98Q54.45 12.98 52.03 12.98Q33.11 12.98 21.285 7.425000000000001Q9.46 1.87 9.46 -10.78Q9.46 -18.59 14.025 -23.43Q18.59 -28.27 25.96 -30.965000000000003Q33.33 -33.660000000000004 41.8 -34.650000000000006Q50.27 -35.64 58.08 -35.64V-35.2Q55.33 -35.2 51.205 -34.925Q47.08 -34.65 42.955 -33.825Q38.83 -33.0 36.025 -31.515Q33.22 -30.03 33.22 -27.72Q33.22 -24.53 38.004999999999995 -23.21Q42.79 -21.89 51.81 -21.89Q55.660000000000004 -21.89 60.775000000000006 -21.945Q65.89 -22.0 70.785 -22.055Q75.68 -22.11 78.76 -22.11Q84.92 -22.11 91.85 -20.02Q98.78 -17.93 104.88499999999999 -13.254999999999999Q110.99 -8.58 114.84 -0.8799999999999999Q118.69 6.82 118.69 18.04Q118.69 29.04 114.125 36.575Q109.56 44.11 101.36500000000001 48.620000000000005Q93.17 53.13 82.33500000000001 55.165000000000006Q71.5 57.2 58.96 57.2ZM58.08 -35.2Q49.39 -35.2 40.480000000000004 -37.125Q31.57 -39.05 24.145 -43.12Q16.72 -47.19 12.209999999999999 -53.68Q7.7 -60.17 7.7 -69.3Q7.7 -78.43 12.209999999999999 -84.86500000000001Q16.72 -91.3 24.145 -95.37Q31.57 -99.44 40.480000000000004 -101.36500000000001Q49.39 -103.29 58.08 -103.29Q66.88 -103.29 75.735 -101.36500000000001Q84.59 -99.44 92.015 -95.37Q99.44 -91.3 103.94999999999999 -84.86500000000001Q108.46 -78.43 108.46 -69.3Q108.46 -60.17 103.94999999999999 -53.68Q99.44 -47.19 92.015 -43.12Q84.59 -39.05 75.735 -37.125Q66.88 -35.2 58.08 -35.2ZM58.08 -35.64Q60.72 -35.64 62.37 -40.425Q64.02 -45.21 64.78999999999999 -52.91Q65.56 -60.61 65.56 -69.3Q65.56 -79.09 64.78999999999999 -86.68Q64.02 -94.27 62.37 -98.56Q60.72 -102.85 58.08 -102.85Q55.44 -102.85 53.79 -98.56Q52.14 -94.27 51.370000000000005 -86.68Q50.6 -79.09 50.6 -69.3Q50.6 -60.61 51.150000000000006 -52.91Q51.7 -45.21 53.295 -40.425Q54.89 -35.64 58.08 -35.64ZM128.7 -62.59Q122.1 -62.59 117.095 -66.935Q112.09 -71.28 112.09 -79.2Q112.09 -87.23 117.20500000000001 -91.08000000000001Q122.32000000000001 -94.93 128.7 -94.93Q134.42 -94.93 140.03 -91.08000000000001Q145.64000000000001 -87.23 145.64000000000001 -80.19H145.42Q145.42 -88.44 138.70999999999998 -95.15Q132.0 -101.86 119.79 -101.86Q114.4 -101.86 108.79 -99.495Q103.18 -97.13 98.725 -91.905Q94.27 -86.68 92.07000000000001 -77.88L91.85 -77.99Q94.05 -87.23 98.56 -92.565Q103.07000000000001 -97.9 108.68 -100.1Q114.29 -102.3 119.79 -102.3Q128.48 -102.3 134.255 -99.0Q140.03 -95.7 142.945 -90.58500000000001Q145.86 -85.47 145.86 -80.19Q145.86 -70.73 140.58 -66.66Q135.3 -62.59 128.7 -62.59Z M195.8 2.2Q184.03 2.2 177.21 -2.145Q170.39000000000001 -6.49 167.47500000000002 -13.969999999999999Q164.56 -21.45 164.56 -31.02V-100.76H149.16V-101.2H206.36V-29.04Q206.36 -19.8 207.07500000000002 -15.4Q207.79000000000002 -11.0 209.495 -9.68Q211.2 -8.36 214.28000000000003 -8.36Q218.9 -8.36 222.2 -12.32Q225.5 -16.28 227.59 -22.770000000000003Q229.68 -29.26 230.67000000000002 -36.96Q231.66000000000003 -44.660000000000004 231.66000000000003 -52.14H232.10000000000002Q232.10000000000002 -43.67 230.78000000000003 -34.21Q229.46 -24.75 225.72000000000003 -16.5Q221.98000000000002 -8.25 214.775 -3.025Q207.57 2.2 195.8 2.2ZM231.66000000000003 0.0V-100.76H218.46V-101.2H273.46000000000004V-0.44H288.86V0.0Z M384.6700000000001 2.2Q369.6 2.2 360.855 -8.8Q352.11000000000007 -19.8 350.35 -40.04V0.0H293.15000000000003V-0.44H308.55000000000007V-164.56H293.15000000000003V-165.0H350.35V-61.27Q352.11000000000007 -81.4 360.74500000000006 -92.29Q369.38000000000005 -103.18 384.6700000000001 -103.18Q396.66 -103.18 407.33000000000004 -96.91Q418.00000000000006 -90.64 424.6550000000001 -78.87Q431.31000000000006 -67.1 431.31000000000006 -50.6Q431.31000000000006 -34.1 424.6550000000001 -22.275Q418.00000000000006 -10.45 407.33000000000004 -4.125Q396.66 2.2 384.6700000000001 2.2ZM374.77000000000004 -1.32Q378.51000000000005 -1.32 380.49 -6.6000000000000005Q382.47 -11.88 383.24 -22.770000000000003Q384.01000000000005 -33.660000000000004 384.01000000000005 -50.6Q384.01000000000005 -67.54 383.24 -78.375Q382.47 -89.21 380.49 -94.435Q378.51000000000005 -99.66 374.77000000000004 -99.66Q369.27000000000004 -99.66 363.605 -94.435Q357.94000000000005 -89.21 354.14500000000004 -78.375Q350.35 -67.54 350.35 -50.6Q350.35 -33.660000000000004 354.14500000000004 -22.770000000000003Q357.94000000000005 -11.88 363.605 -6.6000000000000005Q369.27000000000004 -1.32 374.77000000000004 -1.32Z M584.6500000000001 2.2Q568.0400000000001 2.2 555.2250000000001 -3.685Q542.4100000000001 -9.57 535.1500000000001 -21.285Q527.8900000000001 -33.0 527.8900000000001 -50.6Q527.8900000000001 -68.2 534.9850000000001 -79.91499999999999Q542.0800000000002 -91.63 554.7300000000001 -97.515Q567.3800000000001 -103.4 583.9900000000001 -103.4Q600.3800000000001 -103.4 611.7650000000001 -96.855Q623.1500000000001 -90.31 629.0900000000001 -79.75Q635.0300000000001 -69.19 635.0300000000001 -57.2H542.6300000000001V-57.64H593.0100000000001Q592.9000000000001 -65.78 592.6800000000001 -73.755Q592.4600000000002 -81.73 591.6350000000001 -88.385Q590.8100000000001 -95.04 588.9950000000001 -99.0Q587.1800000000001 -102.96 583.9900000000001 -102.96Q580.8000000000001 -102.96 578.6550000000001 -99.055Q576.5100000000001 -95.15 575.2450000000001 -88.385Q573.9800000000001 -81.62 573.4850000000001 -73.03999999999999Q572.9900000000001 -64.46 572.9900000000001 -55.0Q572.9900000000001 -43.12 573.815 -33.055Q574.6400000000001 -22.99 576.8950000000001 -15.62Q579.1500000000001 -8.25 583.2750000000001 -4.125Q587.4000000000001 0.0 593.8900000000001 0.0Q608.4100000000001 0.0 619.575 -8.745Q630.7400000000001 -17.49 634.8100000000001 -31.46H635.2500000000001Q630.9600000000002 -17.16 618.6400000000001 -7.48Q606.3200000000002 2.2 584.6500000000001 2.2Z\" fill=\"#e7e1d1\"/><path d=\"M442.1 0 L454.2 -138.6 L504.8 -138.6 L516.9 0 Z M439.1 -136.8 h81.0 v-8.8 h-81.0 Z M451.7 -144.8 V-159.6 H507.4 V-144.8 Z M448.2 -158.6 L479.5 -172.9 L510.9 -158.6 Z\" fill=\"#e7e1d1\"/><path d=\"M449.3 -82.5 L447.3 -59.4 L511.8 -59.4 L509.7 -82.5 Z\" fill=\"#95291c\"/><path d=\"M466.4 -147.4 V-157.0 H492.7 V-147.4 Z\" fill=\"#f6d77a\"/></g></svg>";
 
+var NEWS_ENGINE = (function(){
+/*
+ * Where the news comes from: each feed, its outlet, the section it fills and,
+ * for regional feeds, the region. Order matters: within a section, when several
+ * outlets report the same event, the outlet listed first supplies the version shown.
+ *
+ * region: every story in the feed is from that region (BBC's regional feeds).
+ * hint: the region to assume when a story names no place (an Indian paper's national news).
+ *
+ * maxBytes: how much of a feed to read. Feeds list newest first, so the start of
+ * the file is all we need; this keeps the engine fast.
+ */
+const FEEDS = [
+  // ---- World (BBC regional feeds tag their region directly)
+  { id: 'bbc-world', outlet: 'BBC News', section: 'world', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+  { id: 'bbc-africa', outlet: 'BBC News', section: 'world', region: 'mea', url: 'https://feeds.bbci.co.uk/news/world/africa/rss.xml' },
+  { id: 'bbc-mideast', outlet: 'BBC News', section: 'world', region: 'mea', url: 'https://feeds.bbci.co.uk/news/world/middle_east/rss.xml' },
+  { id: 'bbc-europe', outlet: 'BBC News', section: 'world', region: 'europe', url: 'https://feeds.bbci.co.uk/news/world/europe/rss.xml' },
+  { id: 'bbc-latam', outlet: 'BBC News', section: 'world', region: 'americas', url: 'https://feeds.bbci.co.uk/news/world/latin_america/rss.xml' },
+  { id: 'bbc-uscanada', outlet: 'BBC News', section: 'world', region: 'americas', url: 'https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml' },
+  { id: 'bbc-asia', outlet: 'BBC News', section: 'world', region: 'asia', url: 'https://feeds.bbci.co.uk/news/world/asia/rss.xml' },
+  { id: 'bbc-australia', outlet: 'BBC News', section: 'world', region: 'asia', url: 'https://feeds.bbci.co.uk/news/world/australia/rss.xml' },
+  { id: 'guardian-world', outlet: 'The Guardian', section: 'world', url: 'https://www.theguardian.com/world/rss', maxBytes: 90000 },
+  { id: 'aljazeera', outlet: 'Al Jazeera', section: 'world', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
+  { id: 'npr-world', outlet: 'NPR', section: 'world', url: 'https://feeds.npr.org/1004/rss.xml' },
+  { id: 'dw-world', outlet: 'DW', section: 'world', url: 'https://rss.dw.com/rdf/rss-en-world' },
+  { id: 'france24', outlet: 'France 24', section: 'world', url: 'https://www.france24.com/en/rss' },
+  { id: 'un-news', outlet: 'UN News', section: 'world', url: 'https://news.un.org/feed/subscribe/en/news/all/rss.xml' },
+  { id: 'nyt-world', outlet: 'The New York Times', section: 'world', url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', maxBytes: 80000 },
+
+  // ---- India
+  { id: 'the-hindu', outlet: 'The Hindu', section: 'india', hint: 'india', url: 'https://www.thehindu.com/news/national/feeder/default.rss', maxBytes: 70000 },
+  { id: 'indian-express', outlet: 'The Indian Express', section: 'india', hint: 'india', url: 'https://indianexpress.com/section/india/feed/', maxBytes: 70000 },
+  { id: 'hindustan-times', outlet: 'Hindustan Times', section: 'india', hint: 'india', url: 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml', maxBytes: 70000 },
+  { id: 'scroll', outlet: 'Scroll', section: 'india', hint: 'india', url: 'https://feeds.feedburner.com/ScrollinArticles.rss', maxBytes: 70000 },
+  { id: 'bbc-india', outlet: 'BBC News', section: 'india', hint: 'india', url: 'https://feeds.bbci.co.uk/news/world/asia/india/rss.xml' },
+
+  // ---- Business
+  { id: 'bbc-business', outlet: 'BBC News', section: 'business', url: 'https://feeds.bbci.co.uk/news/business/rss.xml' },
+  { id: 'guardian-business', outlet: 'The Guardian', section: 'business', url: 'https://www.theguardian.com/uk/business/rss', maxBytes: 80000 },
+  { id: 'cnbc-business', outlet: 'CNBC', section: 'business', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147' },
+  { id: 'cnbc-economy', outlet: 'CNBC', section: 'business', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258' },
+  { id: 'npr-business', outlet: 'NPR', section: 'business', url: 'https://feeds.npr.org/1006/rss.xml' },
+  { id: 'dw-business', outlet: 'DW', section: 'business', url: 'https://rss.dw.com/rdf/rss-en-bus' },
+
+  // ---- Science, Tech & Health, and the climate box
+  { id: 'bbc-science', outlet: 'BBC News', section: 'science', url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml' },
+  { id: 'guardian-science', outlet: 'The Guardian', section: 'science', url: 'https://www.theguardian.com/science/rss', maxBytes: 80000 },
+  { id: 'bbc-tech', outlet: 'BBC News', section: 'tech', url: 'https://feeds.bbci.co.uk/news/technology/rss.xml' },
+  { id: 'guardian-tech', outlet: 'The Guardian', section: 'tech', url: 'https://www.theguardian.com/uk/technology/rss', maxBytes: 80000 },
+  { id: 'bbc-health', outlet: 'BBC News', section: 'health', url: 'https://feeds.bbci.co.uk/news/health/rss.xml' },
+  { id: 'npr-health', outlet: 'NPR', section: 'health', url: 'https://feeds.npr.org/1128/rss.xml' },
+  { id: 'guardian-society', outlet: 'The Guardian', section: 'health', url: 'https://www.theguardian.com/society/rss', maxBytes: 80000 },
+  { id: 'guardian-environment', outlet: 'The Guardian', section: 'climate', url: 'https://www.theguardian.com/environment/rss', maxBytes: 80000 },
+
+  // ---- Opinion & Analysis
+  { id: 'guardian-opinion', outlet: 'The Guardian', section: 'opinion', kind: 'Opinion', url: 'https://www.theguardian.com/commentisfree/rss', maxBytes: 90000 },
+  { id: 'nyt-opinion', outlet: 'The New York Times', section: 'opinion', kind: 'Opinion', url: 'https://rss.nytimes.com/services/xml/rss/nyt/Opinion.xml', maxBytes: 80000 },
+  { id: 'hindu-opinion', outlet: 'The Hindu', section: 'opinion', kind: 'Opinion', url: 'https://www.thehindu.com/opinion/feeder/default.rss', maxBytes: 70000 },
+  { id: 'conversation', outlet: 'The Conversation', section: 'opinion', kind: 'Analysis', url: 'https://theconversation.com/global/articles.atom', maxBytes: 160000 },
+
+  // ---- Sport & Culture
+  { id: 'bbc-sport', outlet: 'BBC Sport', section: 'sport', url: 'https://feeds.bbci.co.uk/sport/rss.xml' },
+  { id: 'guardian-sport', outlet: 'The Guardian', section: 'sport', url: 'https://www.theguardian.com/uk/sport/rss', maxBytes: 80000 },
+  { id: 'guardian-culture', outlet: 'The Guardian', section: 'culture', url: 'https://www.theguardian.com/culture/rss', maxBytes: 80000 },
+  { id: 'bbc-arts', outlet: 'BBC News', section: 'culture', url: 'https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml' }
+];
+
+/* The feeds are handled in parts of this many, each part its own small, cached request. */
+const PART_SIZE = 7;
+const PARTS = Math.ceil(FEEDS.length / PART_SIZE);
+
+const SECTIONS = ['world', 'india', 'business', 'science', 'tech', 'health', 'climate', 'opinion', 'sport', 'culture'];
+
+/* How long a story stays news, in hours. */
+const WINDOW_HOURS = { default: 24, opinion: 36, culture: 36, climate: 36 };
+
+const MARKETS_URL = 'https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR,GBP,INR,JPY';
+const ON_THIS_DAY_URL = (m, d) => `https://api.wikimedia.org/feed/v1/wikipedia/en/onthisday/selected/${m}/${d}`;
+
+/*
+ * Which region a story is about, from the first place it names.
+ * Regions: americas, europe, mea (Middle East & Africa), asia (Asia-Pacific), india.
+ * Countries, their people ("Ukrainian"), capitals and big cities, and a few
+ * institutions that always mean one region ("Kremlin", "Pentagon").
+ */
+const R = {
+  americas: `United States|U\\.S\\.|US|USA|America|American|Americans|Washington|White House|Pentagon|Congress|Senate|Capitol Hill|Trump|Biden|New York|California|Texas|Florida|Chicago|Los Angeles|Canada|Canadian|Ottawa|Toronto|Mexico|Mexican|Mexico City|Brazil|Brazilian|Brasilia|Lula|Argentina|Argentine|Argentinian|Buenos Aires|Milei|Chile|Chilean|Santiago|Colombia|Colombian|Bogota|Peru|Peruvian|Lima|Venezuela|Venezuelan|Caracas|Maduro|Ecuador|Ecuadorian|Bolivia|Bolivian|Paraguay|Uruguay|Cuba|Cuban|Havana|Haiti|Haitian|Dominican Republic|Jamaica|Jamaican|Puerto Rico|Guatemala|Honduras|El Salvador|Nicaragua|Costa Rica|Panama|Caribbean|Latin America`,
+  europe: `Europe|European|EU|European Union|Brussels|UK|Britain|British|England|English|Scotland|Scottish|Wales|Welsh|Northern Ireland|London|Downing Street|Starmer|Westminster|Ireland|Irish|Dublin|France|French|Paris|Macron|Elysee|Germany|German|Berlin|Merz|Bundestag|Italy|Italian|Rome|Meloni|Vatican|Pope|Spain|Spanish|Madrid|Barcelona|Portugal|Portuguese|Lisbon|Netherlands|Dutch|Amsterdam|Belgium|Belgian|Switzerland|Swiss|Geneva|Austria|Austrian|Vienna|Poland|Polish|Warsaw|Czech|Prague|Slovakia|Hungary|Hungarian|Budapest|Orban|Romania|Romanian|Bulgaria|Bulgarian|Greece|Greek|Athens|Cyprus|Croatia|Serbia|Serbian|Belgrade|Bosnia|Kosovo|Albania|Montenegro|North Macedonia|Slovenia|Sweden|Swedish|Stockholm|Norway|Norwegian|Oslo|Denmark|Danish|Copenhagen|Greenland|Finland|Finnish|Helsinki|Iceland|Estonia|Latvia|Lithuania|Baltic|Ukraine|Ukrainian|Kyiv|Kiev|Zelensky|Russia|Russian|Moscow|Kremlin|Putin|Belarus|Belarusian|Minsk|Moldova|Georgia|Georgian|Tbilisi|Armenia|Armenian|Azerbaijan|NATO|Nato`,
+  mea: `Middle East|Israel|Israeli|Israelis|Jerusalem|Tel Aviv|Netanyahu|Gaza|Gazan|Hamas|West Bank|Palestinian|Palestinians|Palestine|Lebanon|Lebanese|Beirut|Hezbollah|Syria|Syrian|Damascus|Iran|Iranian|Tehran|Iraq|Iraqi|Baghdad|Saudi|Saudi Arabia|Riyadh|Yemen|Yemeni|Houthi|Houthis|Jordan|Jordanian|Amman|Kuwait|Qatar|Qatari|Doha|Bahrain|UAE|Emirates|Emirati|Dubai|Abu Dhabi|Oman|Turkey|Turkish|Turkiye|Ankara|Istanbul|Erdogan|Egypt|Egyptian|Cairo|Libya|Libyan|Tunisia|Algeria|Morocco|Moroccan|Sudan|Sudanese|Khartoum|South Sudan|Ethiopia|Ethiopian|Addis Ababa|Eritrea|Somalia|Somali|Kenya|Kenyan|Nairobi|Uganda|Ugandan|Tanzania|Rwanda|Rwandan|Burundi|Congo|Congolese|DR Congo|DRC|Kinshasa|Nigeria|Nigerian|Lagos|Abuja|Ghana|Ghanaian|Senegal|Mali|Malian|Burkina Faso|Niger|Chad|Cameroon|Ivory Coast|Sierra Leone|Liberia|Guinea|Gabon|Angola|Mozambique|Zambia|Zimbabwe|Malawi|Namibia|Botswana|Madagascar|South Africa|South African|Johannesburg|Cape Town|Pretoria|Ramaphosa|Sahel|Africa|African`,
+  india: `India|Indian|Indians|New Delhi|Delhi|Mumbai|Kolkata|Chennai|Bengaluru|Bangalore|Hyderabad|Gurugram|Gurgaon|Noida|Pune|Ahmedabad|Lucknow|Kerala|Tamil Nadu|Karnataka|Maharashtra|Punjab|Haryana|Bihar|Uttar Pradesh|West Bengal|Gujarat|Rajasthan|Assam|Manipur|Kashmir|Modi|BJP|Congress party|Lok Sabha|Rajya Sabha`,
+  asia: `Asia|Asian|China|Chinese|Beijing|Shanghai|Hong Kong|Xi Jinping|Taiwan|Taiwanese|Taipei|Japan|Japanese|Tokyo|South Korea|North Korea|Korean|Seoul|Pyongyang|Kim Jong Un|Mongolia|Pakistan|Pakistani|Islamabad|Karachi|Lahore|Afghanistan|Afghan|Kabul|Taliban|Bangladesh|Bangladeshi|Dhaka|Sri Lanka|Sri Lankan|Colombo|Nepal|Nepali|Kathmandu|Bhutan|Maldives|Myanmar|Burma|Burmese|Thailand|Thai|Bangkok|Vietnam|Vietnamese|Hanoi|Cambodia|Laos|Malaysia|Malaysian|Kuala Lumpur|Singapore|Indonesia|Indonesian|Jakarta|Philippines|Philippine|Filipino|Manila|Brunei|Timor|Kazakhstan|Uzbekistan|Kyrgyzstan|Tajikistan|Turkmenistan|Australia|Australian|Sydney|Melbourne|Canberra|Albanese|New Zealand|Wellington|Auckland|Fiji|Papua New Guinea|Pacific`
+};
+/*
+ * Lookup by words, not one giant pattern: the text is split into words once and each
+ * position is checked for 3-, 2- and 1-word names in a Map. Hundreds of times faster than
+ * a regular expression with hundreds of alternatives, which matters on a 10 ms budget.
+ */
+const LOOKUP = new Map();
+let MAXW = 1;
+for (const [region, list] of Object.entries(R)) for (const raw of list.split('|')) {
+  const name = raw.replace(/\\\./g, '').replace(/\./g, '');          // "U\.S\." is matched as "US"
+  const key = name.toLowerCase();
+  if (!LOOKUP.has(key)) LOOKUP.set(key, region);
+  MAXW = Math.max(MAXW, key.split(' ').length);
+}
+/* Place names of two or more words ("tamil nadu", "saudi arabia"), so headlines can treat each as one word. */
+const MULTIWORD = new Set([...LOOKUP.keys()].filter((k) => k.includes(' ')).concat(['prime minister', 'supreme court', 'high court', 'central bank', 'united nations', 'red sea', 'black sea', 'strait of hormuz', 'gaza city']));
+// Short all-caps names (US, UK, EU, UAE...) must be written in capitals so "us" the word never counts.
+const CAPS = new Set(['us', 'usa', 'uk', 'eu', 'uae', 'drc', 'bjp', 'nato']);
+
+function regionOf(text) {
+  const words = text.replace(/\b([A-Z])\.([A-Z])\.(?:([A-Z])\.)?/g, '$1$2$3').split(/[^\p{L}\p{N}]+/u);
+  for (let i = 0; i < words.length; i++) {
+    if (!words[i]) continue;
+    for (let n = Math.min(MAXW, words.length - i); n >= 1; n--) {
+      const found = n === 1 ? words[i] : words.slice(i, i + n).join(' ');
+      const key = found.toLowerCase();
+      const region = LOOKUP.get(key);
+      if (!region) continue;
+      if (CAPS.has(key) && found !== found.toUpperCase()) continue;
+      if (key === 'georgia' || key === 'georgian') { if (/\b(?:Atlanta|Savannah|governor of Georgia)\b/i.test(text)) return 'americas'; }
+      if (key === 'congress' && /\bCongress (?:leader|president|MP|MPs|MLA|MLAs|chief|workers)\b/.test(text)) return 'india';
+      return region;
+    }
+  }
+  return null;
+}
+
+/*
+ * Spotting the same event reported by different outlets.
+ * Two headlines are about the same event when they share most of their significant
+ * words (common words like "the" and "says" removed, plurals folded):
+ *   at least 3 shared words covering half of the shorter headline,
+ *   or, for very short headlines, 2 shared words covering two thirds.
+ * (Thresholds were tuned on a day of real headlines from all the feeds.)
+ * An inverted index means each headline is only compared with those sharing a word.
+ */
+
+const STOP = new Set(('the a an and or but nor of in on at to for from by with as is are was were be been being has have had ' +
+  'it its this that these those after before over under into out up down off says say said tells told new more most than ' +
+  'amid about across against among around what why how who whom which when where will would could can may might must shall ' +
+  'not no yes his her him their them they he she we you our your my me us live latest update updates news report reports ' +
+  'reported video watch first last day days week weeks year years one two three four five six seven eight nine ten ' +
+  'just now still also all any some many much very get gets got make makes made take takes took set sets back amid via ' +
+  'here there what\'s don\'t won\'t can\'t it\'s says? say: during while within without until since per vs').split(/\s+/));
+
+const NONWORD = /[^a-zA-Z0-9À-ɏͰ-ϿЀ-ӿऀ-ॿ]+/;   // plain classes: quicker to set up than unicode ones
+
+function stem(w) {
+  if (w.length > 4 && w.endsWith('ies')) return w.slice(0, -3) + 'y';
+  if (w.length > 4 && /(?:ches|shes|sses|xes)$/.test(w)) return w.slice(0, -2);
+  if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') && !w.endsWith('us')) return w.slice(0, -1);
+  return w;
+}
+
+function tokens(title) {
+  const words = title.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/['\u2019]s(?![a-z])/g, '').split(NONWORD);
+  const out = new Set();
+  for (let i = 0; i < words.length; i++) {
+    let joined = null;                                    // "tamil nadu" is one word, not two
+    for (let n = 3; n >= 2 && !joined; n--) if (i + n <= words.length) { const k = words.slice(i, i + n).join(' '); if (MULTIWORD.has(k)) { joined = k; i += n - 1; } }
+    if (joined) { out.add(joined); continue; }
+    const w = words[i];
+    if (w.length > 2 && !STOP.has(w)) out.add(stem(w));
+  }
+  return [...out];
+}
+
+/* Do two headlines (token lists) describe the same event? */
+function sameEvent(a, b, shared) {
+  const m = Math.min(a.length, b.length);
+  return (shared >= 3 && shared / m >= 0.5) || (shared >= 2 && m <= 3 && shared / m >= 0.66);
+}
+
+/*
+ * Group stories (each with .tokens and .outlet) into events, taking them in order of
+ * preference. A story joins an event only when it matches MORE than half of that event's
+ * stories from other outlets (or exactly half, through a close match), so one loose match can't chain two different events together
+ * (the physics Nobel and the medicine Nobel stay apart). Returns arrays of stories.
+ */
+function clusterStories(stories) {
+  const group = new Int32Array(stories.length), groups = [], index = new Map();
+  for (let i = 0; i < stories.length; i++) {
+    const s = stories[i], shared = new Map();
+    for (const t of s.tokens) { const list = index.get(t); if (list) for (const j of list) shared.set(j, (shared.get(j) || 0) + 1); }
+    const hits = new Map(), strong = new Set();
+    for (const [j, n] of shared) {
+      const o = stories[j];
+      if (o.outlet === s.outlet || !sameEvent(s.tokens, o.tokens, n)) continue;
+      hits.set(group[j], (hits.get(group[j]) || 0) + 1);
+      if (n >= 4 || n / Math.min(s.tokens.length, o.tokens.length) >= 0.6) strong.add(group[j]);
+    }
+    // join the event this story matches best: more than half its reports, or exactly half with a close match
+    let best = -1, bestRatio = 0;
+    for (const [g, n] of hits) {
+      let others = 0;
+      for (const m of groups[g]) if (m.outlet !== s.outlet) others++;
+      const ratio = n / others;
+      if (ratio < 0.5 || (ratio === 0.5 && !strong.has(g))) continue;
+      if (ratio > bestRatio || (ratio === bestRatio && n > hits.get(best))) { best = g; bestRatio = ratio; }
+    }
+    if (best < 0) { best = groups.length; groups.push([]); }
+    groups[best].push(s); group[i] = best;
+    for (const t of s.tokens) { let list = index.get(t); if (!list) index.set(t, list = []); list.push(i); }
+  }
+  return groups;
+}
+
+/*
+ * Combining the parts into one edition: merge the same event across outlets, rank,
+ * and keep the best stories per section. Pure computation with no network, a few
+ * milliseconds: it runs in the reader's own browser (and in the newsroom).
+ */
+
+const EDITION_VERSION = 2;
+const KEEP = { world: 70, india: 50, business: 40, science: 20, tech: 20, health: 20, climate: 12, sport: 30, culture: 24, opinion: 30, front: 40 };
+
+function storyOut(s, extra) {
+  const o = { id: s.id, title: s.title, summary: s.summary, link: s.link, outlet: s.outlet, time: s.time };
+  if (s.author) o.author = s.author;
+  if (s.kind) o.kind = s.kind;
+  return Object.assign(o, extra);
+}
+
+/* Combine the parts into the ranked edition. Pure computation, a few milliseconds. */
+function combine(parts, extras = {}, { now = Date.now() } = {}) {
+  const order = new Map(FEEDS.map((f, i) => [f.id, i]));
+  const rank = (s) => order.has(s.feed) ? order.get(s.feed) : 999;
+
+  // one story per link, and per outlet headline (regional and world feeds overlap)
+  const byLink = new Map(), byTitle = new Map(), sources = [], filtered = [];
+  for (const p of parts) {
+    if (!p) continue;
+    sources.push(...p.sources); if (p.filtered) filtered.push(...p.filtered);
+    for (const it of p.stories) {
+      const key = it.outlet + '\n' + it.title.toLowerCase().replace(/[^a-zA-Z0-9À-ɏͰ-ϿЀ-ӿऀ-ॿ]+/g, ' ').trim();
+      const prev = byLink.get(it.link) || byTitle.get(key);
+      if (prev) {
+        prev.sections.add(it.section);
+        if (rank(it) < rank(prev)) prev.feed = it.feed;
+        if (it.region && FEEDS[rank(it)] && FEEDS[rank(it)].region) prev.region = it.region;
+        continue;
+      }
+      const s = Object.assign({}, it, { sections: new Set([it.section]) });
+      byLink.set(it.link, s); byTitle.set(key, s);
+    }
+  }
+  sources.sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
+  const kept = [...byLink.values()].sort((a, b) => rank(a) - rank(b) || b.time - a.time);
+
+  // the same event across outlets (opinion pieces stand alone)
+  const news = kept.filter((s) => s.section !== 'opinion');
+  for (const s of news) s.tokens = tokens(s.title);
+  const clusters = clusterStories(news).map((members) => {
+    const outlets = new Set(members.map((m) => m.outlet));
+    let newest = 0;
+    const sections = new Set();
+    for (const m of members) { if (m.time > newest) newest = m.time; for (const x of m.sections) sections.add(x); }
+    const tagged = members.find((m) => m.region && FEEDS[rank(m)] && FEEDS[rank(m)].region);   // a regional feed knows best
+    const votes = {};
+    for (const m of members) if (m.region) votes[m.region] = (votes[m.region] || 0) + 1;
+    const region = tagged ? tagged.region : Object.keys(votes).sort((a, b) => votes[b] - votes[a])[0] || null;
+    const sens = members.find((m) => m.note);
+    // more outlets on it = bigger news; it fades by one outlet's worth every six hours
+    return { members, sections, region, newest, outlets: outlets.size, note: sens ? sens.note : null, score: outlets.size * 3 - (now - newest) / 7200000 };
+  });
+  clusters.sort((a, b) => b.score - a.score || b.newest - a.newest);
+
+  function present(c, section) {
+    const primary = (section && c.members.find((m) => m.sections.has(section))) || c.members[0];
+    const others = [], seen = new Set([primary.outlet]);
+    for (const m of c.members) if (!seen.has(m.outlet) && others.length < 3) { seen.add(m.outlet); others.push({ outlet: m.outlet, title: m.title, link: m.link }); }
+    const extra = { outlets: c.outlets, score: Math.round(c.score * 10) / 10 };
+    if (c.region) extra.region = c.region;
+    if (c.note) extra.note = c.note;
+    if (others.length) extra.others = others;
+    return storyOut(primary, extra);
+  }
+
+  /*
+   * An event belongs in a section when at least a third of its reports came from that
+   * section's feeds (a business wire picking up a war story doesn't make it business news),
+   * and the India page keeps to stories about India.
+   */
+  const inSection = (c, sec) => {
+    if (!c.sections.has(sec)) return false;
+    if (sec === 'india' && c.region && c.region !== 'india') return false;
+    let n = 0;
+    for (const m of c.members) if (m.sections.has(sec)) n++;
+    return sec === 'world' ? n * 2 >= c.members.length : n * 3 >= c.members.length;   // world news: mostly from world desks
+  };
+  const sections = {};
+  for (const sec of ['world', 'india', 'business', 'science', 'tech', 'health', 'climate', 'sport', 'culture']) {
+    sections[sec] = clusters.filter((c) => inSection(c, sec)).slice(0, KEEP[sec]).map((c) => present(c, sec));
+  }
+  sections.opinion = kept.filter((s) => s.section === 'opinion').sort((a, b) => b.time - a.time).slice(0, KEEP.opinion)
+    .map((s) => storyOut(s, Object.assign({ outlets: 1 }, s.note ? { note: s.note } : {}, s.region ? { region: s.region } : {})));
+  const front = clusters.filter((c) => [...c.sections].some((x) => x !== 'climate')).slice(0, KEEP.front).map((c) => present(c, null));
+
+  const updatedAt = Math.max(0, ...parts.map((p) => (p && p.builtAt) || 0)) || now;
+  const out = { version: EDITION_VERSION, updatedAt, front, sections, markets: extras.markets || null, onThisDay: extras.onThisDay || [], sources,
+    counts: { stories: kept.length, events: clusters.length, filtered: parts.reduce((n, p) => n + ((p && p.filteredCount) || 0), 0) } };
+  if (filtered.length) out.filtered = filtered.sort((a, b) => b.time - a.time);
+  return out;
+}
+
+
+return { combine: combine, PARTS: PARTS, EDITION_VERSION: EDITION_VERSION };
+})();
+
 /* The Daily Guble: shared renderer, games and reading controls.
    The server wraps this file together with reader.js (for readers) or
    editor.js (for signed-in editors) into one bundle. */
@@ -242,7 +554,8 @@ var LIVE_TOKENS = [
   ['highWater', 'Next high tide'], ['lowWater', 'Next low tide'], ['moon', 'Moon phase'], ['moonLit', 'Moon, percent lit'],
   ['temp', 'Temperature now'], ['conditions', 'Sky right now'], ['forecast', 'Short forecast'],
   ['high', 'Today’s high'], ['low', 'Tonight’s low'], ['tonight', 'Tonight'],
-  ['tomorrowWeather', 'Tomorrow’s weather'], ['dayAfterWeather', 'The day after'], ['weatherPlace', 'Where the weather is for']
+  ['tomorrowWeather', 'Tomorrow’s weather'], ['dayAfterWeather', 'The day after'], ['weatherPlace', 'Where the weather is for'],
+  ['updated', 'When the news was last updated']
 ];
 var TOKEN_RE = /\{\{\s*(\w+)\s*\}\}/g;
 function liveTZ(){ return (ALMANAC && ALMANAC.timeZone) || 'America/New_York'; }
@@ -285,6 +598,7 @@ function liveValues(){
     highWater: next('high'), lowWater: next('low'),
     moon: A.moon ? A.moon.phase : '—', moonLit: A.moon ? A.moon.illumination + '%' : '—',
     weatherPlace: A.placeName || '—',
+    updated: newsUpdatedText(),
     temp: wx(function(W){ return W.current.temp + '°'; }),
     conditions: wx(function(W){ return W.current.text; }),
     forecast: wx(function(W){ return W.forecast; }),
@@ -557,8 +871,9 @@ function SCHEMA_LABEL(type){ return hooks.labels[type] || type; }
 /* =========================================================
    PAGES
    ========================================================= */
-function renderPage(page, i, N, m){
+function renderPage(page, i, N, m, issue){
   var sheet = el('div', 'sheet'), face = el('div', 'face'), paper = el('div', 'paper');
+  var news = page.news ? newsColumns(page, issue || ISSUE) : null;     // news pages are laid out from the hour's stories
   if (page.plate) {
     paper.appendChild(el('div', 'plate',
       '<div class="folio"><span>' + (m.volume || '') + ' &nbsp; ' + (m.number || '') + '</span><span>' + (m.place || '') + '</span><span>' + (m.price || '') + '</span></div>' +
@@ -573,18 +888,20 @@ function renderPage(page, i, N, m){
     var rh = page.runhead || {};
     paper.appendChild(el('div', 'runhead',
       '<span class="rh-left"><span class="rh-badge">' + BRAND_BADGE + '</span>' + (rh.left || ((m.name || '') + ' &nbsp;&middot;&nbsp; ' + (m.date || ''))) + '</span>' +
-      '<em>' + (rh.center || '') + '</em>' +
+      '<em>' + (rh.center || (news && NEWS_TEMPLATES[page.news] ? NEWS_TEMPLATES[page.news].center : '')) + '</em>' +
       '<span>' + (rh.right || ('Page ' + (i + 1))) + '</span>'));
   }
-  var cols = page.columns || [];
+  var cols = news ? news.cols : page.columns || [];
+  if (news) sheet.classList.add('news-page');
   var grid = el('div', 'grid');
   grid.style.gridTemplateColumns = cols.map(function(c){ return (c.w || 1) + 'fr'; }).join(' ') || '1fr';
   cols.forEach(function(c){ c.blocks = c.blocks || []; var col = el('div', 'col'); renderBlocks(c.blocks, col); grid.appendChild(col); });
   paper.appendChild(grid);
-  if (page.strip && page.strip.length) {
+  var stripCols = news ? news.strip : page.strip;
+  if (stripCols && stripCols.length) {
     var strip = el('div', 'strip');
-    strip.style.gridTemplateColumns = page.strip.map(function(c){ return (c.w || 1) + 'fr'; }).join(' ');
-    page.strip.forEach(function(c){ c.blocks = c.blocks || []; var cell = el('div', 'cell'); renderBlocks(c.blocks, cell); strip.appendChild(cell); });
+    strip.style.gridTemplateColumns = stripCols.map(function(c){ return (c.w || 1) + 'fr'; }).join(' ');
+    stripCols.forEach(function(c){ c.blocks = c.blocks || []; var cell = el('div', 'cell'); renderBlocks(c.blocks, cell); strip.appendChild(cell); });
     paper.appendChild(strip);
   }
   face.appendChild(paper);
@@ -1055,7 +1372,7 @@ function WordSearch(cfg){
    STORY READER: tap a story to read it in large type,
    then swipe or use the arrows to go story by story.
    ========================================================= */
-var SKIP_READ = { crossword: 1, sudoku: 1, wordsearch: 1, rule: 1, sect: 1, kicker: 1 };
+var SKIP_READ = { crossword: 1, sudoku: 1, wordsearch: 1, rule: 1, sect: 1, kicker: 1, inside: 1, notice: 1 };
 var RD = { list: [], i: 0, open: false, lastFocus: null };
 function blockType(n){ var info = n && BIDMAP[n.dataset.bid]; return info ? info.block.type : null; }
 /* A story is a headline plus the photo, text, quotes and tables that follow it in
@@ -1070,16 +1387,19 @@ function storyNodes(){
         if (!n.classList.contains('block')) return;
         var info = BIDMAP[n.dataset.bid], t = info && info.block.type;
         if (!t || SKIP_READ[t]) return;
-        var headed = (t === 'article' || t === 'head') && !!(info.block.head || info.block.text);
+        var headed = ((t === 'article' || t === 'head') && !!(info.block.head || info.block.text)) || t === 'story';
         var cont = CONTINUES[t] || (t === 'article' && !headed);
         if (headed && cur && !cur.headed && !cur.standalone) { cur.nodes.push(n); cur.headed = true; return; }
         if (cont && cur && !cur.standalone) { cur.nodes.push(n); return; }
-        cur = { nodes: [n], node: n, page: pi, headed: headed, standalone: !headed && !cont };
+        cur = { nodes: [n], node: n, page: pi, headed: headed, standalone: !headed && !cont, rank: info.block.fit != null ? info.block.fit : 5000 };
         out.push(cur);
       });
     });
   });
-  return out;
+  // on a news page, read the lead story first and the briefs last, whatever column they sit in
+  return out.map(function(s, k){ s.k = k; return s; }).sort(function(a, b){
+    return a.page - b.page || (sheets[a.page].classList.contains('news-page') ? (a.rank === 0 ? 5000 : a.rank) - (b.rank === 0 ? 5000 : b.rank) : 0) || a.k - b.k;
+  });
 }
 function storyIndexOf(node){
   for (var k = 0; k < RD.list.length; k++) if (RD.list[k].nodes.indexOf(node) >= 0) return k;
@@ -1280,10 +1600,17 @@ function buildSheets(issue){
   PZ.release();
   finishCurl();                                   // never leave a half-turned page behind a redraw
   sheets.forEach(function(s){ s.remove(); });
-  BID = 0; BIDMAP = {}; LIVE_NODES = [];
+  BID = 0; BIDMAP = {}; LIVE_NODES = []; NEWS.used = {};
   var pages = issue.pages || [], m = issue.masthead || {};
-  sheets = pages.map(function(p, i){ return renderPage(p, i, pages.length, m); });
-  sheets.forEach(function(s){ book.appendChild(s); applyLive(s); });
+  NEWS.fontsPending = !!(document.fonts && document.fonts.status !== 'loaded');
+  // one page at a time: each news page is fitted before the next picks its stories
+  sheets = pages.map(function(p, i){
+    var s = renderPage(p, i, pages.length, m, issue);
+    book.appendChild(s);
+    if (p.news) fitNewsSheet(s);
+    applyLive(s);
+    return s;
+  });
   N = sheets.length;
   idx = Math.max(0, Math.min(idx, N - 1));
   dots.innerHTML = '';
@@ -1531,6 +1858,8 @@ function wireView(){
     if (isEditing() || stage.__justDragged) return;
     var c = e.target.closest('.corner'); if (c) { go(parseInt(c.dataset.nav, 10)); return; }
     if (e.target.closest('[data-pz], .wx-locate')) return;
+    var gt = e.target.closest('[data-goto]');
+    if (gt && zoom <= 1.02) { goTo(parseInt(gt.dataset.goto, 10)); return; }
     var now = Date.now(), x = e.clientX, y = e.clientY;
     clearTimeout(tapTimer);
     if (lastTap && now - lastTap.t < 320 && Math.hypot(x - lastTap.x, y - lastTap.y) < 40) { lastTap = null; zoomAt(x, y); return; }
@@ -1679,6 +2008,355 @@ function wireView(){
     else if (k === 'End') { e.preventDefault(); go(N); }
   });
   window.addEventListener('resize', measure);
+}
+
+/* =========================================================
+   NEWS — the hourly edition, put together in the reader's own browser.
+   The server hands out the news in a few small parts (fetched, filtered,
+   cached for the hour); this file combines them with the engine's rules,
+   then lays every news page out in columns and fits them to the page.
+   ========================================================= */
+var NEWS = { pool: null, byId: {}, used: {}, loading: false, error: null, pending: null, filtered: false };
+var NEWS_API = '/api/news';
+var NEWS_KINDS = [
+  ['front', 'Front page'], ['world', 'World'], ['india', 'India'], ['business', 'Business'],
+  ['science', 'Science, Tech & Health'], ['opinion', 'Opinion & Analysis'], ['sport', 'Sport & Culture']
+];
+var REGION_NAMES = { americas: 'The Americas', europe: 'Europe', mea: 'Middle East & Africa', asia: 'Asia-Pacific', india: 'India' };
+var SECTION_NAMES = { world: 'World', india: 'India', business: 'Business', science: 'Science', tech: 'Technology', health: 'Health', climate: 'Climate', opinion: 'Opinion', sport: 'Sport', culture: 'Culture' };
+function newsHour(t){ return Math.floor((t || Date.now()) / 3600000); }
+function newsKindName(k){ for (var i = 0; i < NEWS_KINDS.length; i++) if (NEWS_KINDS[i][0] === k) return NEWS_KINDS[i][1]; return k; }
+
+/* ---------------- getting the news ---------------- */
+function setPool(pool){
+  NEWS.pool = pool; NEWS.byId = {};
+  if (!pool) return;
+  function add(list){ (list || []).forEach(function(s){ if (!NEWS.byId[s.id]) NEWS.byId[s.id] = s; }); }
+  add(pool.front);
+  Object.keys(pool.sections || {}).forEach(function(k){ add(pool.sections[k]); });
+}
+function getJSONNews(url){
+  return fetch(url, { credentials: 'same-origin' }).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+}
+/*
+ * Load the news: the copy saved in this browser first (instant, works offline), then this
+ * hour's parts if that copy is older. Cheap to call often: it does nothing until the hour
+ * turns. onUpdate(pool) runs whenever there is news to show.
+ * withFiltered: the newsroom also gets the stories the filter took out.
+ */
+function loadNews(onUpdate, withFiltered){
+  var hour = newsHour();
+  if (NEWS.hour === hour || NEWS.loading) return;
+  if (!NEWS.pool && !withFiltered) {
+    var saved = store('news');
+    if (saved && saved.v === NEWS_ENGINE.EDITION_VERSION && saved.pool) {
+      setPool(saved.pool); onUpdate(saved.pool);
+      if (saved.hour === hour) { NEWS.hour = hour; return; }
+    }
+  }
+  NEWS.loading = true;
+  var q = '?h=' + hour + (withFiltered ? '&include=filtered' : ''), parts = [];
+  for (var k = 0; k < NEWS_ENGINE.PARTS; k++) parts.push(getJSONNews(NEWS_API + '/' + k + q).catch(function(){ return null; }));
+  Promise.all([Promise.all(parts), getJSONNews(NEWS_API + '/extras' + q).catch(function(){ return null; })]).then(function(r){
+    NEWS.loading = false; NEWS.hour = hour;
+    var got = r[0].filter(Boolean);
+    if (got.length < NEWS_ENGINE.PARTS) setTimeout(function(){ if (NEWS.hour === hour) NEWS.hour = null; }, 5 * 60000);   // try the missing parts again soon
+    if (!got.length) { NEWS.error = 'The news could not be reached just now. It will try again in a few minutes.'; if (!NEWS.pool) onUpdate(null); return; }
+    var pool = NEWS_ENGINE.combine(r[0], r[1] || {}, { now: Date.now() });
+    pool.complete = got.length === NEWS_ENGINE.PARTS;
+    if (r[0][0] && r[0][0].rules) pool.rules = r[0][0].rules;
+    NEWS.error = null;
+    if (!withFiltered) store('news', { v: NEWS_ENGINE.EDITION_VERSION, hour: pool.complete ? hour : -1, pool: pool });
+    setPool(pool); onUpdate(pool);
+  });
+}
+/* Is the reader in the middle of something? Then fresh news waits rather than moving the page under them. */
+function newsBusy(){ return RD.open || zoom > 1.02 || !!PZ.active || !!CURL; }
+
+/* ---------------- choosing the stories for a page ---------------- */
+function newsSettings(issue){ return (issue && issue.news) || {}; }
+/* The stories a slot can draw from, best first, with the editor's choices applied. */
+function newsQueue(name, page, issue){
+  if (name.indexOf('|') >= 0) return [].concat.apply([], name.split('|').map(function(n){ return newsQueue(n, page, issue); }));
+  var P = NEWS.pool;
+  if (page.locked && page.locked.stories) return page.locked.stories.slice();
+  if (!P) return [];
+  var parts = name.split(':'), sec = parts[0], region = parts[1], list;
+  if (sec === 'front') list = P.front || [];
+  else list = (P.sections || {})[sec] || [];
+  if (sec === 'world' && region !== 'india') list = list.filter(function(s){ return s.region !== 'india'; });   // India has its own page
+  if (region) list = list.filter(function(s){ return s.region === region; });
+  var hide = newsSettings(issue).hide || [];
+  if (hide.length) list = list.filter(function(s){ return hide.indexOf(s.id) < 0; });
+  var pins = (page.pin || []).map(function(id){ return NEWS.byId[id]; }).filter(Boolean);
+  var own = (page.own || []).filter(function(o){ return o && o.title; }).map(function(o, i){
+    return { id: 'own-' + i + '-' + hash(o.title), own: true, title: o.title, summary: o.summary || '', link: o.link || '', outlet: o.outlet || '', kicker: o.kicker || '', time: o.time || null, outlets: 1 };
+  });
+  return own.concat(pins, list.filter(function(s){ return (page.pin || []).indexOf(s.id) < 0; }));
+}
+function takeStory(queue){
+  for (var i = 0; i < queue.length; i++) {
+    var s = queue[i];
+    if (!NEWS.used[s.id]) { NEWS.used[s.id] = 1; queue.splice(i, 1); NEWS.byId[s.id] = NEWS.byId[s.id] || s; return s; }
+  }
+  return null;
+}
+function giveBack(id){ delete NEWS.used[id]; }
+
+/*
+ * Page templates. Each column lists slots; columns are filled in "pri" order so the
+ * biggest story takes the first pick. Slot kinds:
+ *   story  one story from a queue, at a size, with up to sum characters of summary
+ *   fill   as many stories from a queue as the column holds (the fitter removes the extras)
+ *   sect   a section label        briefs  headlines only       region  a label and up to n stories
+ *   inside what's on the other pages     markets  currency rates      onthisday  three moments in history
+ */
+var NEWS_TEMPLATES = {
+  front: { center: '', cols: [
+    { w: 1, pri: 2, slots: [{ fill: 'front', size: 'small', sum: 260 }] },
+    { w: 2.15, pri: 1, slots: [{ story: 'front', size: 'lead', sum: 560, cols: 2, also: true }, { story: 'front', size: 'big', sum: 360, cols: 2, also: true }, { fill: 'front', size: 'medium', sum: 260, cols: 2 }] },
+    { w: 1, pri: 3, slots: [{ fill: 'front', size: 'small', sum: 240 }] },
+    { w: 0.95, pri: 4, slots: [{ inside: true }, { sect: 'In brief' }, { briefs: 'front|world|business|science|sport', n: 12 }] }
+  ] },
+  world: { center: 'World', cols: [
+    { w: 2, pri: 1, slots: [{ story: 'world', size: 'lead', sum: 520, cols: 2, also: true }, { story: 'world', size: 'big', sum: 320, cols: 2, also: true }, { fill: 'world', size: 'medium', sum: 240, cols: 2 }] },
+    { w: 1, pri: 2, slots: [{ region: 'world:americas', n: 3 }, { region: 'world:europe', n: 3 }] },
+    { w: 1, pri: 3, slots: [{ region: 'world:mea', n: 3 }, { region: 'world:asia', n: 3 }] }
+  ] },
+  india: { center: 'India', cols: [
+    { w: 2, pri: 1, slots: [{ story: 'india', size: 'lead', sum: 520, cols: 2, also: true }, { fill: 'india', size: 'medium', sum: 260, cols: 2 }] },
+    { w: 1, pri: 2, slots: [{ fill: 'india', size: 'small', sum: 220 }] },
+    { w: 1, pri: 3, slots: [{ sect: 'Across the country' }, { briefs: 'india', n: 16 }] }
+  ] },
+  business: { center: 'Business', cols: [
+    { w: 2, pri: 1, slots: [{ story: 'business', size: 'lead', sum: 520, cols: 2, also: true }, { fill: 'business', size: 'medium', sum: 260, cols: 2 }] },
+    { w: 1, pri: 2, slots: [{ fill: 'business', size: 'small', sum: 240 }] },
+    { w: 1, pri: 3, slots: [{ markets: true }, { sect: 'Business in brief' }, { briefs: 'business|tech', n: 12 }] }
+  ] },
+  science: { center: 'Science, Tech &amp; Health', cols: [
+    { w: 1, pri: 1, slots: [{ sect: 'Science', strong: true }, { story: 'science', size: 'big', sum: 340 }, { fill: 'science', size: 'small', sum: 220 }] },
+    { w: 1, pri: 2, slots: [{ sect: 'Technology', strong: true }, { story: 'tech', size: 'big', sum: 340 }, { fill: 'tech', size: 'small', sum: 220 }] },
+    { w: 1, pri: 3, slots: [{ sect: 'Health', strong: true }, { story: 'health', size: 'big', sum: 340 }, { fill: 'health', size: 'small', sum: 220 }] }
+  ], strip: [{ w: 1, slots: [{ sect: 'Climate &amp; environment' }, { briefs: 'climate', n: 4, row: true }] }] },
+  opinion: { center: 'Opinion &amp; Analysis', cols: [
+    { w: 1.4, pri: 1, slots: [{ story: 'opinion', size: 'big', sum: 520, label: true }, { fill: 'opinion', size: 'medium', sum: 320, label: true }] },
+    { w: 1, pri: 2, slots: [{ fill: 'opinion', size: 'medium', sum: 300, label: true }] },
+    { w: 1, pri: 3, slots: [{ fill: 'opinion', size: 'small', sum: 260, label: true }, { sect: 'More views' }, { briefs: 'opinion', n: 8 }] }
+  ] },
+  sport: { center: 'Sport &amp; Culture', cols: [
+    { w: 1, pri: 1, slots: [{ sect: 'Sport', strong: true }, { story: 'sport', size: 'big', sum: 340 }, { fill: 'sport', size: 'small', sum: 220 }] },
+    { w: 1, pri: 3, slots: [{ fill: 'sport|culture', size: 'small', sum: 200 }] },
+    { w: 1, pri: 2, slots: [{ sect: 'Culture', strong: true }, { story: 'culture', size: 'big', sum: 340 }, { fill: 'culture', size: 'small', sum: 220 }] }
+  ], strip: [{ w: 1, slots: [{ onthisday: true }] }] }
+};
+
+/* Build a news page's columns: blocks for every slot, plus extra fillers the fitter trims. */
+function newsColumns(page, issue){
+  var T = NEWS_TEMPLATES[page.news] || NEWS_TEMPLATES.world, queues = {};
+  function Q(name){ return queues[name] || (queues[name] = newsQueue(name, page, issue)); }
+  if (!NEWS.pool && !(page.locked && page.locked.stories)) {
+    return { cols: [{ w: 1, blocks: [{ type: 'notice', text: NEWS.error || 'The news is on its way…' }] }], strip: null };
+  }
+  function build(c, rankBase){
+    var blocks = [], rank = rankBase;
+    c.slots.forEach(function(s){
+      if (s.sect) { blocks.push({ type: 'sect', text: s.sect, strong: s.strong, fit: 0 }); return; }
+      if (s.story) { var st = takeStory(Q(s.story)); if (st) blocks.push(storyBlock(st, s, rank++)); return; }
+      if (s.fill) { for (var i = 0; i < 9; i++) { var f = takeStory(Q(s.fill)); if (!f) break; blocks.push(storyBlock(f, s, 1000 + rank++, true)); } return; }
+      if (s.region) {
+        var name = s.region.split(':')[1], got = [];
+        for (var j = 0; j < s.n; j++) { var r = takeStory(Q(s.region)); if (r) got.push(r); }
+        if (!got.length) return;
+        blocks.push({ type: 'sect', text: REGION_NAMES[name] || name, fit: 0, region: name });
+        got.forEach(function(x, n){ blocks.push(storyBlock(x, { size: n ? 'small' : 'medium', sum: n ? 200 : 260 }, 100 * (n + 1) + rank++)); });
+        return;
+      }
+      if (s.briefs) {
+        var items = [];
+        for (var k = 0; k < s.n; k++) { var b = takeStory(Q(s.briefs)); if (b) items.push(b.id); }
+        if (items.length) blocks.push({ type: 'briefs', ids: items, row: !!s.row, fit: 0, trims: true });
+        return;
+      }
+      if (s.inside) { blocks.push({ type: 'inside', fit: 0 }); return; }
+      if (s.markets) { if (NEWS.pool && NEWS.pool.markets) blocks.push({ type: 'markets', fit: 0 }); return; }
+      if (s.onthisday) { if (NEWS.pool && NEWS.pool.onThisDay && NEWS.pool.onThisDay.length) blocks.push({ type: 'onthisday', fit: 0 }); return; }
+    });
+    return { w: c.w, blocks: blocks };
+  }
+  var cols = new Array(T.cols.length);
+  T.cols.map(function(c, i){ return { c: c, i: i }; }).sort(function(a, b){ return a.c.pri - b.c.pri; })
+    .forEach(function(x){ cols[x.i] = build(x.c, x.i * 10); });
+  var strip = T.strip ? T.strip.map(function(c){ return build(c, 0); }) : null;
+  return { cols: cols, strip: strip };
+}
+function storyBlock(s, slot, rank, filler){
+  return { type: 'story', id: s.id, size: slot.size, sum: slot.sum, cols: slot.cols || 1, also: !!slot.also, label: !!slot.label, fit: rank, filler: !!filler };
+}
+
+/* ---------------- drawing the blocks ---------------- */
+function trimWords(s, n){
+  s = String(s || '');
+  if (n == null || s.length <= n) return s;
+  if (n <= 0) return '';
+  var cut = s.slice(0, n), sp = cut.lastIndexOf(' ');
+  return (sp > n * 0.6 ? cut.slice(0, sp) : cut).replace(/[\s,;:.–—-]+$/, '') + '…';
+}
+function ago(t){
+  if (!t) return '';
+  var m = Math.round((Date.now() - t) / 60000);
+  if (m < 2) return 'just now';
+  if (m < 60) return m + ' minutes ago';
+  var h = Math.round(m / 60);
+  return h === 1 ? 'an hour ago' : h < 36 ? h + ' hours ago' : Math.round(h / 24) + ' days ago';
+}
+function storyKicker(s, b){
+  if (s.kicker) return s.kicker;
+  if (b && b.label) return s.kind || 'Opinion';
+  if (s.region && REGION_NAMES[s.region] && s.region !== 'india') return REGION_NAMES[s.region];
+  return '';
+}
+function storyLink(s){
+  if (!s.link || !/^https:\/\//.test(s.link)) return null;
+  var a = txt('a', 'story-link', 'Read the full story at ' + (s.outlet || 'the source') + ' →');
+  a.href = s.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+  return a;
+}
+BLOCKS.story = function(b){
+  var s = NEWS.byId[b.id] || {};
+  var w = el('div', 'art story story-' + (b.size || 'medium') + (b.size === 'lead' ? ' lead-wrap' : ''));
+  var k = storyKicker(s, b);
+  if (k) w.appendChild(txt('p', 'kicker', k));
+  var h = heading('', b.size === 'lead' ? 'lead' : b.size); h.textContent = s.title || ''; w.appendChild(h);
+  if (s.note) w.appendChild(txt('p', 'story-note', s.note));
+  var sum = trimWords(s.summary, b.sum);
+  if (sum) {
+    var body = el('div', 'body' + (b.cols > 1 && sum.length > 300 ? ' cols' + b.cols : '') + (b.size === 'small' ? ' body-small' : ''));
+    body.appendChild(txt('p', null, sum));
+    w.appendChild(body);
+  }
+  var credit = [s.author && s.kind ? s.author : '', s.outlet, ago(s.time)].filter(Boolean).join(' · ');
+  if (s.outlets > 1 && !b.also) credit += ' · also in ' + (s.outlets - 1) + ' more';
+  if (credit) w.appendChild(txt('div', 'byline story-credit', credit));
+  if (b.also && s.others && s.others.length && !b.noAlso) {
+    var ul = el('ul', 'story-also');
+    s.others.forEach(function(o){ var li = el('li'); li.appendChild(txt('b', null, o.outlet)); li.appendChild(document.createTextNode(' ' + o.title)); ul.appendChild(li); });
+    w.appendChild(ul);
+  }
+  var a = storyLink(s); if (a) w.appendChild(a);
+  return w;
+};
+BLOCKS.briefs = function(b){
+  var ul = el('ul', 'brief news-briefs' + (b.row ? ' brief-row' : ''));
+  (b.ids || []).forEach(function(id){
+    var s = NEWS.byId[id]; if (!s) return;
+    var li = el('li'); li.appendChild(txt('b', null, s.title));
+    li.appendChild(txt('span', 'brief-src', [s.outlet, ago(s.time)].filter(Boolean).join(' · ')));
+    var a = storyLink(s); if (a) { a.textContent = 'Read at ' + (s.outlet || 'the source') + ' →'; li.appendChild(a); }
+    ul.appendChild(li);
+  });
+  return ul;
+};
+BLOCKS.inside = function(){
+  var d = el('div', 'box inside'), pages = (hooks.issue ? hooks.issue() : ISSUE).pages || [];
+  d.appendChild(el('h6', 'sect', 'Inside today'));
+  var ul = el('ul', 'inside-list');
+  pages.forEach(function(p, i){
+    if (i === 0) return;
+    var name = p.news ? newsKindName(p.news) : plain((p.runhead || {}).center || '') || 'Page ' + (i + 1);
+    var li = el('li'); li.dataset.goto = i;
+    li.appendChild(txt('span', null, name)); li.appendChild(txt('b', null, String(i + 1)));
+    ul.appendChild(li);
+  });
+  d.appendChild(ul);
+  return d;
+};
+BLOCKS.markets = function(){
+  var M = NEWS.pool && NEWS.pool.markets, d = el('div', 'box markets');
+  d.appendChild(el('h6', 'sect', 'Currencies'));
+  if (!M) { d.appendChild(txt('p', 'tide-note', 'Rates are on their way.')); return d; }
+  var names = { EUR: 'Euro', GBP: 'Pound', INR: 'Rupee', JPY: 'Yen' }, rows = el('div', 'rowlist');
+  Object.keys(M.rates).forEach(function(c){
+    var v = M.rates[c], r = el('div', 'row');
+    r.appendChild(txt('span', null, (names[c] || c) + ' (' + c + ')'));
+    r.appendChild(txt('span', null, v >= 100 ? v.toFixed(1) : v.toFixed(3)));
+    rows.appendChild(r);
+  });
+  d.appendChild(txt('p', 'tide-note', 'One US dollar buys:'));
+  d.appendChild(rows);
+  var day = M.date ? new Date(M.date + 'T12:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric' }) : '';
+  d.appendChild(txt('p', 'tide-note', 'European Central Bank reference rates' + (day ? ', ' + day : '') + '.'));
+  return d;
+};
+BLOCKS.onthisday = function(){
+  var list = (NEWS.pool && NEWS.pool.onThisDay) || [], d = el('div', 'onthisday');
+  d.appendChild(el('h6', 'sect', 'On this day'));
+  var row = el('div', 'otd-row');
+  list.forEach(function(e){
+    var p = el('p'); p.appendChild(txt('b', null, String(e.year))); p.appendChild(document.createTextNode(' ' + e.text));
+    row.appendChild(p);
+  });
+  d.appendChild(row);
+  d.appendChild(txt('p', 'tide-note', 'From Wikipedia’s “On this day”.'));
+  return d;
+};
+BLOCKS.notice = function(b){ return txt('p', 'news-notice', b.text || ''); };
+
+/* ---------------- fitting the columns to the page ---------------- */
+/*
+ * Every news column is drawn with more than it can hold. This trims it, measuring the
+ * real layout (so it is right for the actual typefaces): first whole blocks that start
+ * below the page, then the lowest-priority blocks one by one, shortening summaries
+ * before dropping a story. Stories that don't make it go back for the next pages.
+ */
+function fitColumn(col){
+  var H = col.clientHeight;
+  if (!H) return;
+  function bottom(n){ return n.offsetTop + n.offsetHeight; }
+  function info(n){ return BIDMAP[n.dataset.bid]; }
+  function drop(n){
+    var i = info(n);
+    if (i) { var k = i.list.indexOf(i.block); if (k >= 0) i.list.splice(k, 1); if (i.block.type === 'story') giveBack(i.block.id); if (i.block.type === 'briefs') i.block.ids.forEach(giveBack); }
+    n.remove();
+  }
+  function redraw(n){
+    var i = info(n), fresh = BLOCKS[i.block.type](i.block);
+    fresh.classList.add('block'); fresh.dataset.bid = n.dataset.bid;
+    n.replaceWith(fresh); return fresh;
+  }
+  var top = col.firstElementChild ? col.firstElementChild.offsetTop : 0;
+  function over(){ var last = col.lastElementChild; return last && bottom(last) - top > H + 0.5; }
+  // 1. anything starting below the page goes in one pass
+  [].slice.call(col.children).forEach(function(n){ if (n.offsetTop - top >= H - 24) drop(n); });
+  for (var guard = 0; guard < 40 && over(); guard++) {
+    var kids = [].slice.call(col.children), last = kids[kids.length - 1], li = info(last);
+    // 2. a list of headlines loses items from its end
+    if (li && li.block.type === 'briefs' && li.block.ids.length > 1) { giveBack(li.block.ids.pop()); redraw(last); continue; }
+    // 3. an unlabelled section heading never ends a column
+    if (li && li.block.type === 'sect' && kids.length > 1) { drop(last); continue; }
+    // 4. shorten the summary of the lowest-priority story, then drop it
+    var worst = null;
+    kids.forEach(function(n){ var x = info(n); if (x && x.block.type === 'story' && (!worst || x.block.fit >= info(worst).block.fit)) worst = n; });
+    if (!worst) { drop(last); continue; }
+    var wb = info(worst).block;
+    if (wb.sum > 120 && wb.size !== 'lead') { wb.sum = Math.floor(wb.sum * 0.6); redraw(worst); continue; }
+    if (wb.also && !wb.noAlso) { wb.noAlso = true; redraw(worst); continue; }
+    if (wb.size === 'lead' && wb.sum > 160) { wb.sum = Math.floor(wb.sum * 0.75); redraw(worst); continue; }
+    if (wb.sum > 0 && wb.filler) { wb.sum = 0; wb.size = 'small'; redraw(worst); continue; }
+    var next = worst.nextElementSibling, prev = worst.previousElementSibling;
+    drop(worst);
+    // a region or section label left with nothing under it goes too
+    if (prev && info(prev) && info(prev).block.type === 'sect' && (!next || (info(next) && info(next).block.type === 'sect'))) drop(prev);
+  }
+}
+function fitNewsSheet(sheet){
+  sheet.querySelectorAll('.paper .col, .paper .strip > .cell').forEach(fitColumn);
+}
+
+/* ---------------- the live "updated" time ---------------- */
+function newsUpdatedText(){
+  var P = NEWS.pool;
+  if (!P || !P.updatedAt) return '—';
+  return clock(new Date(P.updatedAt).toISOString());
 }
 
 
@@ -1914,12 +2592,19 @@ wireView();
 hooks.issue = function(){ return ISSUE; };
 hooks.rerender = function(){ buildSheets(ISSUE); measure(); };
 loadAlmanac(ISSUE, liveUpdated);       // date, sun and moon now; tides and weather as they arrive
+/* The news: shown as soon as it's here, refreshed when the hour turns, never while someone is reading. */
+function showNews(){ if (newsBusy()) { NEWS.pending = true; return; } NEWS.pending = false; hooks.rerender(); refreshLive(); }
+loadNews(showNews);
+setInterval(function(){ loadNews(showNews); if (NEWS.pending) showNews(); }, 30000);
 applyTheme(ISSUE);
 buildSheets(ISSUE);
 measure();
 startLiveClock();
 setTimeout(showHint, 1200);
 if (window.ResizeObserver) new ResizeObserver(measure).observe(stage);
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){
+  measure();
+  if (NEWS.fontsPending && NEWS.pool) showNews();     // columns were fitted before the typefaces arrived: fit them again
+});
 
 })();

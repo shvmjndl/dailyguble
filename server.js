@@ -12,6 +12,7 @@
  *   GET  /api/history/:id  one published version (admin)
  *   GET  /api/site         where the public website is published, and how the last push went (admin)
  *   POST /api/site/publish publish the current edition to the public website now (admin)
+ *   GET  /api/news/:part   one part of this hour's news (0..5, or "extras"); ?include=filtered for editors
  *   GET  /healthz          liveness check
  *
  * No third-party packages: everything here is Node's standard library.
@@ -255,10 +256,21 @@ function asset(body, type) {
   if (/text|javascript|json|svg|manifest/.test(type)) a.gz = zlib.gzipSync(body, { level: 9 });   // compressed once, at start-up
   return a;
 }
-const bundle = (...files) => '(function(){"use strict";\n' + ['src/themes.js', 'src/brand.js'].concat(files).map(read).join('\n') + '\n})();\n';
+/*
+ * The news engine's combining step (engine/*.js, ES modules) runs in the browser too: it is
+ * folded into the bundle as one function scope, exposing NEWS_ENGINE.combine and friends.
+ */
+function engineForBrowser() {
+  const src = ['engine/sources.js', 'engine/places.js', 'engine/cluster.js', 'engine/combine.js'].map((f) => read(f)
+    .replace(/^import [^;]+;\n/gm, '').replace(/^export \{[^}]*\} from [^;]+;\n/gm, '')
+    .replace(/^export (?=const |let |function |async function )/gm, '')).join('\n');
+  return 'var NEWS_ENGINE = (function(){\n' + src + '\nreturn { combine: combine, PARTS: PARTS, EDITION_VERSION: EDITION_VERSION };\n})();\n';
+}
+const ENGINE_JS = engineForBrowser();
+const bundle = (...files) => '(function(){"use strict";\n' + [read('src/themes.js'), read('src/brand.js'), ENGINE_JS].concat(files.map(read)).join('\n') + '\n})();\n';
 const PUBLIC_ASSETS = {
   '/paper.css': asset(read('public/paper.css'), 'text/css; charset=utf-8'),
-  '/paper.js': asset(bundle('src/core.js', 'src/almanac.js', 'src/reader.js'), 'text/javascript; charset=utf-8'),
+  '/paper.js': asset(bundle('src/core.js', 'src/news.js', 'src/almanac.js', 'src/reader.js'), 'text/javascript; charset=utf-8'),
   '/login.css': asset(read('public/login.css'), 'text/css; charset=utf-8'),
   '/login.js': asset(read('public/login.js'), 'text/javascript; charset=utf-8'),
   '/favicon.svg': asset(read('public/favicon.svg'), 'image/svg+xml'),
@@ -270,7 +282,7 @@ const PUBLIC_ASSETS = {
 };
 const ADMIN_ASSETS = {
   '/admin/editor.css': asset(read('admin/editor.css'), 'text/css; charset=utf-8'),
-  '/admin/editor.js': asset(bundle('src/core.js', 'src/almanac.js', 'src/editor.js'), 'text/javascript; charset=utf-8')
+  '/admin/editor.js': asset(bundle('src/core.js', 'src/news.js', 'src/almanac.js', 'src/editor.js'), 'text/javascript; charset=utf-8')
 };
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function paperTitle() {
@@ -327,6 +339,38 @@ function publishSite(reason) {
   return p;
 }
 
+/* ---------------- the hourly news ---------------- */
+/*
+ * The same engine as on Cloudflare (engine/), kept for the hour in memory. A part from the
+ * last hour is served at once while a fresh one is fetched behind it, so nobody waits.
+ */
+const NEWS_HOUR = 3600000;
+const newsCache = new Map();          // "part|settings" -> { hour, data, building }
+let engineP = null;
+const engine = () => engineP || (engineP = import('./engine/edition.js'));
+function newsFilterSettings() {
+  const n = (live.issue && live.issue.news) || {};
+  return { blockWords: n.blockWords || [], allowWords: n.allowWords || [], blockOutlets: n.blockOutlets || [], allow: n.allow || [] };
+}
+async function newsPart(name) {
+  const E = await engine();
+  if (name !== 'extras' && !(/^\d$/.test(name) && Number(name) < E.PARTS)) return null;
+  const settings = newsFilterSettings(), key = name + '|' + JSON.stringify(settings), hour = Math.floor(Date.now() / NEWS_HOUR);
+  let c = newsCache.get(key);
+  const build = () => {
+    const entry = newsCache.get(key) || {};
+    if (entry.building) return entry.building;
+    entry.building = (name === 'extras' ? E.buildExtras({ settings }) : E.buildPart(Number(name), { settings }))
+      .then((data) => { newsCache.set(key, { hour, data }); return data; })
+      .finally(() => { entry.building = null; });
+    newsCache.set(key, entry);
+    return entry.building;
+  };
+  if (c && c.data && c.hour === hour) return c.data;
+  if (c && c.data && hour - c.hour <= 3) { build().catch(() => {}); return c.data; }     // last hour's news now, this hour's soon
+  return build();
+}
+
 /* ---------------- the edition on disk ---------------- */
 let live = { issue: null, json: '', version: 0, savedAt: null };
 async function writeAtomic(file, data) {
@@ -368,6 +412,7 @@ const HISTORY_NAME = /^(\d{13})-v(\d{1,9})\.json$/;
 
 /* A structural check of an edition before it is saved. Text fields hold the
    editor's own HTML, which the page's Content-Security-Policy keeps inert. */
+const NEWS_PAGE_KINDS = ['front', 'world', 'india', 'business', 'science', 'opinion', 'sport'];
 function validateIssue(x) {
   const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
   if (!isObj(x)) return 'the edition must be an object';
@@ -375,6 +420,13 @@ function validateIssue(x) {
   if (x.theme != null && !isObj(x.theme)) return 'the theme must be an object';
   if (x.location != null) { if (!isObj(x.location)) return 'the location must be an object'; const l = checkLocation(x.location); if (l) return l; }
   if (!Array.isArray(x.pages) || x.pages.length < 1 || x.pages.length > 64) return 'an edition needs between 1 and 64 pages';
+  const words = (v, max, len) => v == null || (Array.isArray(v) && v.length <= max && v.every((w) => typeof w === 'string' && w.length <= len));
+  if (x.news != null) {
+    if (!isObj(x.news)) return 'the news settings must be an object';
+    if (!words(x.news.blockWords, 500, 80) || !words(x.news.allowWords, 500, 80)) return 'blocked and allowed words: up to 500, each up to 80 characters';
+    if (!words(x.news.blockOutlets, 100, 80)) return 'blocked outlets: up to 100 names';
+    if (!words(x.news.allow, 1000, 40) || !words(x.news.hide, 1000, 40)) return 'too many restored or hidden stories';
+  }
   const checkBlocks = (list, depth) => {
     if (!Array.isArray(list) || list.length > 300) return 'a column can hold up to 300 blocks';
     for (const b of list) {
@@ -388,6 +440,14 @@ function validateIssue(x) {
   };
   for (const [i, page] of x.pages.entries()) {
     if (!isObj(page)) return `page ${i + 1} is not an object`;
+    if (page.news != null) {
+      if (!NEWS_PAGE_KINDS.includes(page.news)) return `page ${i + 1} has an unknown kind of news page`;
+      if (!words(page.pin, 50, 40)) return `page ${i + 1}: too many pinned stories`;
+      if (page.own != null && (!Array.isArray(page.own) || page.own.length > 20 || !page.own.every((o) => isObj(o) && typeof o.title === 'string' && o.title.length <= 300 && ['summary', 'link', 'outlet', 'kicker'].every((k) => o[k] == null || (typeof o[k] === 'string' && o[k].length <= 3000))))) return `page ${i + 1}: your own stories need a headline (and short text)`;
+      if (page.own && page.own.some((o) => o.link && !/^https:\/\//.test(o.link))) return `page ${i + 1}: story links must start with https://`;
+      if (page.locked != null && (!isObj(page.locked) || !Array.isArray(page.locked.stories) || page.locked.stories.length > 200)) return `page ${i + 1}: the kept stories are broken`;
+      continue;
+    }
     if (!Array.isArray(page.columns) || page.columns.length < 1 || page.columns.length > 8) return `page ${i + 1} needs between 1 and 8 columns`;
     if (page.strip != null && (!Array.isArray(page.strip) || page.strip.length > 6)) return `page ${i + 1} has too many footer boxes`;
     for (const c of page.columns.concat(page.strip || [])) {
@@ -471,6 +531,16 @@ async function route(req, res) {
     if (p === '/api/issue') {
       res.setHeader('Cache-Control', 'no-cache');
       return sendJson(res, 200, { version: live.version, savedAt: live.savedAt, issue: live.issue }, { 'Cache-Control': 'no-cache' });
+    }
+    const newsM = p.match(/^\/api\/news\/(\d|extras)$/);
+    if (newsM) {
+      const wantFiltered = url.searchParams.get('include') === 'filtered';
+      if (wantFiltered && !requireAdmin(req, res)) return;
+      const data = await newsPart(newsM[1]);
+      if (!data) return sendJson(res, 404, { error: 'not_found' });
+      const E = await engine();
+      const out = wantFiltered ? Object.assign({}, data, newsM[1] === '0' ? { rules: (await import('./engine/filter.js')).ruleSummary() } : {}) : (newsM[1] === 'extras' ? data : E.publicPart(data));
+      return sendJson(res, 200, out, { 'Cache-Control': wantFiltered ? 'private, no-store' : 'public, max-age=300' });
     }
     if (p === '/api/site') {
       if (!requireAdmin(req, res)) return;

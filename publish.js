@@ -14,11 +14,12 @@ const fsp = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 
-/* Readers' browsers fetch tides and weather themselves, straight from these public services. */
+/* Readers' browsers fetch tides and weather themselves, straight from these public services.
+   The news comes from the site itself (/api/news, a Cloudflare Pages Function in functions/). */
 const DATA_SOURCES = ['https://api.tidesandcurrents.noaa.gov', 'https://api.weather.gov', 'https://api.open-meteo.com', 'https://api-bdc.io'];
 const SITE_CSP = [
   "default-src 'none'", "script-src 'self'", "style-src 'self' https://fonts.googleapis.com", "font-src https://fonts.gstatic.com",
-  "img-src 'self' data: blob:", 'connect-src ' + DATA_SOURCES.join(' '), "manifest-src 'self'",
+  "img-src 'self' data: blob:", "connect-src 'self' " + DATA_SOURCES.join(' '), "manifest-src 'self'",
   "base-uri 'none'", "form-action 'none'", "object-src 'none'"
 ].join('; ');
 
@@ -48,6 +49,12 @@ function extractImages(issue) {
     }
   })(copy);
   return { issue: copy, files };
+}
+
+/* The editor's filter choices, for the news function on Cloudflare. */
+function newsSettings(issue) {
+  const n = issue.news || {}, list = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
+  return { blockWords: list(n.blockWords), allowWords: list(n.allowWords), blockOutlets: list(n.blockOutlets), allow: list(n.allow) };
 }
 
 /* assets: { template, fonts, readerJs, paperCss, favicon, manifest (object), icon192, icon512, appleIcon } */
@@ -82,6 +89,8 @@ function buildSite(rawIssue, assets) {
     '  Cache-Control: public, max-age=31536000, immutable',
     '/*.png',
     '  Cache-Control: public, max-age=604800',
+    '/news-settings.json',
+    '  Cache-Control: no-cache',
     ''
   ].join('\n');
   return [
@@ -95,6 +104,7 @@ function buildSite(rawIssue, assets) {
     { path: 'apple-touch-icon.png', data: assets.appleIcon },
     ...(assets.ogImage ? [{ path: 'og-image.png', data: assets.ogImage }] : []),
     { path: '_headers', data: Buffer.from(headers) },       // Cloudflare Pages and Netlify read this
+    { path: 'news-settings.json', data: Buffer.from(JSON.stringify(newsSettings(issue))) },   // the filter settings /api/news uses
     { path: '.nojekyll', data: Buffer.from('') }             // GitHub Pages: serve files as they are
   ].concat(images);
 }

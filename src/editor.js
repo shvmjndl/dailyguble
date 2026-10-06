@@ -648,6 +648,13 @@ var TEMPLATES = {
     { w:1, blocks:[ sectHead('Crossword'), SCHEMA.crossword.make() ] },
     { w:1, blocks:[ sectHead('Sudoku'), SCHEMA.sudoku.make() ] },
     { w:1, blocks:[ sectHead('Word search'), SCHEMA.wordsearch.make() ] } ] }; } },
+  newsFront: { label:'News: front page', make:function(){ return { news:'front', plate:true }; } },
+  newsWorld: { label:'News: world', make:function(){ return { news:'world' }; } },
+  newsIndia: { label:'News: India', make:function(){ return { news:'india' }; } },
+  newsBusiness: { label:'News: business', make:function(){ return { news:'business' }; } },
+  newsScience: { label:'News: science, tech & health', make:function(){ return { news:'science' }; } },
+  newsOpinion: { label:'News: opinion & analysis', make:function(){ return { news:'opinion' }; } },
+  newsSport: { label:'News: sport & culture', make:function(){ return { news:'sport' }; } },
   empty: { label:'Empty page, three columns', make:function(){ return { runhead:{ center:'New Section' }, columns:[ { w:1, blocks:[] }, { w:1, blocks:[] }, { w:1, blocks:[] } ] }; } }
 };
 function today(){ return new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' }); }
@@ -698,6 +705,7 @@ function viewPage(body){
   nav.appendChild(disable(btn('← Previous page', 'small', function(){ go(-1); }), idx === 0));
   nav.appendChild(disable(btn('Next page →', 'small', function(){ go(1); }), idx >= pages.length - 1));
   s.appendChild(nav);
+  if (page.news) { body.appendChild(s); viewNewsPage(body, page); return; }
   var head = el('select', 'ed-in');
   [['plate', 'Nameplate (front page)'], ['run', 'Running head (inside pages)']].forEach(function(o){ var op = txt('option', null, o[1]); op.value = o[0]; head.appendChild(op); });
   head.value = page.plate ? 'plate' : 'run';
@@ -742,6 +750,8 @@ function viewPage(body){
 
 function viewBlock(body){
   var b = ED.sel.block, list = ED.sel.list, S = SCHEMA[b.type] || { label: b.type, fields: [] };
+  if (b.type === 'story') return viewStory(body, b);
+  if ((ED.draft.pages[idx] || {}).news) { ED.sel = null; return viewPage(body); }     // the rest of a news page is placed automatically
   body.appendChild(btn('← Back to page ' + (idx + 1), 'small ghost', function(){ ED.sel = null; renderPanel(); markSel(); }));
   var page = ED.draft.pages[idx] || {}, conts = containers(page), where = conts.filter(function(c){ return c.list === list; })[0];
   var s = sec(S.label, where ? where.name : 'Inside a box');
@@ -781,7 +791,7 @@ function viewPages(body){
   pages.forEach(function(p, i){
     var li = el('li', 'ed-page' + (i === idx ? ' on' : '')), main = el('button', 'ed-bl-main'); main.type = 'button';
     main.appendChild(txt('span', null, 'Page ' + (i + 1)));
-    main.appendChild(txt('em', null, p.plate ? 'Front page' : (plain(p.runhead && p.runhead.center) || 'Untitled section')));
+    main.appendChild(txt('em', null, p.news ? newsKindName(p.news) + ' (news)' : p.plate ? 'Front page' : (plain(p.runhead && p.runhead.center) || 'Untitled section')));
     main.addEventListener('click', function(){ goTo(i); ED.tab = 'page'; ED.sel = null; renderPanel(); });
     li.appendChild(main);
     li.appendChild(ico('↑', 'Move page ' + (i + 1) + ' earlier', function(){ swap(pages, i, i - 1); if (idx === i) idx = i - 1; else if (idx === i - 1) idx = i; changed(true); }, i === 0));
@@ -827,6 +837,7 @@ function viewIssue(body){
   var liveBox = el('div'); liveBox.appendChild(liveSection());
   body.appendChild(locationSection(function(){ liveBox.innerHTML = ''; liveBox.appendChild(liveSection()); }));
   body.appendChild(liveBox);
+  body.appendChild(newsFilterSection());
 
   var s3 = sec('Next edition');
   s3.appendChild(txt('p', 'ed-note', 'Moves the edition number on by one and sets today’s date. Stories, pages and games stay as they are so you can update them.'));
@@ -1177,6 +1188,155 @@ function wsEditor(b){
 /* =========================================================
    EDITOR — clicking the paper selects blocks; boot
    ========================================================= */
+
+/* =========================================================
+   EDITOR — the news pages and the filter
+   ========================================================= */
+function newsCfg(){ var n = ED.draft.news = ED.draft.news || {}; ['blockWords', 'allowWords', 'blockOutlets', 'allow', 'hide'].forEach(function(k){ n[k] = n[k] || []; }); return n; }
+function storyBrief(s){ return { id: s.id, title: s.title, summary: s.summary, link: s.link, outlet: s.outlet, time: s.time, author: s.author, kind: s.kind, region: s.region, note: s.note, outlets: s.outlets }; }
+/* The stories now printed on a page, most important first, read from the paper itself. */
+function storiesOnPage(i){
+  var out = [], seen = {};
+  (sheets[i] ? sheets[i].querySelectorAll('[data-bid]') : []).forEach(function(n){
+    var b = (BIDMAP[n.dataset.bid] || {}).block; if (!b) return;
+    (b.type === 'story' ? [b.id] : b.type === 'briefs' ? b.ids : []).forEach(function(id){
+      if (!seen[id] && NEWS.byId[id]) { seen[id] = 1; out.push({ s: NEWS.byId[id], r: b.type === 'story' ? b.fit : 9000 + out.length }); }
+    });
+  });
+  return out.sort(function(a, b){ return a.r - b.r; }).map(function(x){ return x.s; });
+}
+/* One line words list: "word, another word" or one per line. */
+function inWords(obj, k, rows, ph){
+  var t = el('textarea', 'ed-in'); t.rows = rows || 3; t.value = (obj[k] || []).join('\n'); if (ph) t.placeholder = ph;
+  t.addEventListener('input', function(){ obj[k] = t.value.split(/[\n,]/).map(function(w){ return w.trim(); }).filter(Boolean).slice(0, 500); changed(); });
+  return t;
+}
+function storyRow(s, page, onPage){
+  var n = newsCfg(), li = el('li', 'ed-story');
+  var main = el('div', 'ed-story-main');
+  main.appendChild(txt('b', null, s.title));
+  main.appendChild(txt('span', null, [s.outlet, ago(s.time)].filter(Boolean).join(' · ')));
+  li.appendChild(main);
+  var acts = el('div', 'ed-row');
+  var pinned = (page.pin || []).indexOf(s.id) >= 0;
+  acts.appendChild(btn(pinned ? 'Unpin' : 'Pin here', 'small', function(){
+    page.pin = page.pin || [];
+    if (pinned) page.pin.splice(page.pin.indexOf(s.id), 1); else page.pin.unshift(s.id);
+    if (!page.pin.length) delete page.pin;
+    changed(true);
+  }));
+  acts.appendChild(btn('Hide', 'small danger', function(){ if (n.hide.indexOf(s.id) < 0) n.hide.push(s.id); changed(true); }));
+  li.appendChild(acts);
+  return li;
+}
+function viewNewsPage(body, page){
+  var n = newsCfg(), s = sec('News page', newsKindName(page.news));
+  var kind = el('select', 'ed-in');
+  NEWS_KINDS.forEach(function(k){ var o = txt('option', null, k[1]); o.value = k[0]; kind.appendChild(o); });
+  kind.value = page.news;
+  kind.addEventListener('change', function(){ page.news = kind.value; if (page.news === 'front') page.plate = true; else delete page.plate; delete page.locked; changed(true); });
+  s.appendChild(field('Which news', kind, 'The page fills itself with the latest stories every hour'));
+  s.appendChild(txt('p', 'ed-note', NEWS.pool ? 'Stories from ' + newsUpdatedText() + '. ' + (NEWS.pool.counts ? NEWS.pool.counts.stories + ' stories from ' + (NEWS.pool.sources || []).filter(function(x){ return x.ok; }).length + ' feeds this hour.' : '') : (NEWS.error || 'Fetching this hour’s news…')));
+  var lock = el('div', 'ed-row');
+  if (page.locked) {
+    lock.appendChild(txt('span', 'ed-note', 'Kept since ' + new Date(page.locked.at).toLocaleString() + ': this page won’t change on the hour.'));
+    lock.appendChild(btn('Let it update again', 'small', function(){ delete page.locked; changed(true); }));
+  } else {
+    lock.appendChild(btn('Keep these stories', 'small', function(){
+      var list = storiesOnPage(idx);
+      if (!list.length) { msg('There are no stories on this page to keep yet.', 'warn'); return; }
+      page.locked = { at: Date.now(), stories: list.map(storyBrief) };
+      changed(true); msg('This page now keeps its ' + list.length + ' stories until you let it update again.', 'ok');
+    }));
+  }
+  s.appendChild(lock);
+  body.appendChild(s);
+
+  var placed = storiesOnPage(idx), s2 = sec('On this page', placed.length + ' stories');
+  s2.appendChild(txt('p', 'ed-note', 'Pin a story to lead this page, or hide it from the whole paper. Click any story on the paper to see it here.'));
+  var ul = el('ul', 'ed-stories');
+  placed.forEach(function(st){ ul.appendChild(storyRow(st, page)); });
+  s2.appendChild(ul);
+  body.appendChild(s2);
+
+  if (n.hide.length) {
+    var s3 = sec('Hidden stories', n.hide.length), ul3 = el('ul', 'ed-stories');
+    n.hide.forEach(function(id, i){
+      var st = NEWS.byId[id], li = el('li', 'ed-story');
+      li.appendChild(txt('b', null, st ? st.title : 'A story from an earlier hour'));
+      li.appendChild(btn('Show again', 'small', function(){ n.hide.splice(i, 1); changed(true); }));
+      ul3.appendChild(li);
+    });
+    s3.appendChild(ul3); body.appendChild(s3);
+  }
+
+  page.own = page.own || [];
+  var s4 = sec('Your own stories', page.own.length ? String(page.own.length) : 'None');
+  s4.appendChild(txt('p', 'ed-note', 'Write a story yourself, or add one from anywhere. It goes at the top of this page.'));
+  page.own.forEach(function(o, i){
+    var g = el('div', 'ed-group'), h = el('header');
+    h.appendChild(txt('b', null, 'Story ' + (i + 1)));
+    h.appendChild(delIco('Delete this story', function(){ page.own.splice(i, 1); if (!page.own.length) delete page.own; changed(true); }));
+    g.appendChild(h);
+    g.appendChild(field('Headline', inText(o, 'title')));
+    g.appendChild(field('Summary', inArea(o, 'summary', 4)));
+    var r = el('div', 'ed-row');
+    r.appendChild(field('Source', inText(o, 'outlet', 'e.g. The Daily Guble')));
+    r.appendChild(field('Label', inText(o, 'kicker', 'e.g. Exclusive')));
+    g.appendChild(r);
+    g.appendChild(field('Link', inText(o, 'link', 'https://…'), 'Optional. Readers can open it from the story reader.'));
+    s4.appendChild(g);
+  });
+  s4.appendChild(disable(btn('+ Add your own story', 'small', function(){ page.own.push({ title: 'Your headline', summary: '' }); changed(true); }), page.own.length >= 20));
+  if (!page.own.length) delete page.own;
+  body.appendChild(s4);
+}
+function viewStory(body, b){
+  var page = ED.draft.pages[idx] || {}, st = NEWS.byId[b.id];
+  body.appendChild(btn('← Back to page ' + (idx + 1), 'small ghost', function(){ ED.sel = null; renderPanel(); markSel(); }));
+  var s = sec('Story', st ? st.outlet : '');
+  if (!st) { s.appendChild(txt('p', 'ed-note', 'This story is no longer in the news.')); body.appendChild(s); return; }
+  s.appendChild(txt('p', 'ed-story-title', st.title));
+  if (st.summary) s.appendChild(txt('p', 'ed-note', st.summary));
+  if (st.note) s.appendChild(txt('p', 'ed-note', 'Sensitive: ' + st.note));
+  var meta = [st.outlet, ago(st.time), st.outlets > 1 ? 'reported by ' + st.outlets + ' outlets' : '', st.region ? REGION_NAMES[st.region] : ''].filter(Boolean).join(' · ');
+  s.appendChild(txt('p', 'ed-note', meta));
+  if (st.link && /^https:\/\//.test(st.link)) { var a = txt('a', 'ed-link', 'Open the story at ' + st.outlet + ' ↗'); a.href = st.link; a.target = '_blank'; a.rel = 'noopener noreferrer'; s.appendChild(a); }
+  var ul = el('ul', 'ed-stories'); ul.appendChild(storyRow(st, page)); s.appendChild(ul);
+  body.appendChild(s);
+}
+function newsFilterSection(){
+  var n = newsCfg(), P = NEWS.pool || {}, s = sec('News filter', 'Rules only, no AI');
+  s.appendChild(txt('p', 'ed-note', 'Every story is checked against word lists before it reaches the paper. Sexual content, graphic gore, slurs and strong swearing are taken out. Stories about suicide, sexual violence, child abuse and eating disorders stay in, with a short note above them. Your changes here take effect when you publish.'));
+  if (P.rules) {
+    var d = el('details', 'ed-rules'); d.appendChild(txt('summary', null, 'The built-in lists'));
+    P.rules.forEach(function(r){ d.appendChild(txt('p', 'ed-note', r.label + ' (' + (r.action === 'remove' ? 'taken out' : 'kept, with a note') + '): ' + r.patterns.map(function(p){ return p.replace(/\\w\*/g, '…').replace(/\(\?[^)]*\)|[\\?()|\[\]]/g, ''); }).join(', '))); });
+    s.appendChild(d);
+  }
+  s.appendChild(field('Also take out stories with', inWords(n, 'blockWords', 3, 'one word or phrase per line, * for any ending'), 'e.g. crypto* or celebrity gossip'));
+  s.appendChild(field('Never take out because of', inWords(n, 'allowWords', 2, 'one per line'), 'Words the built-in lists catch by mistake, e.g. a band or a place'));
+  s.appendChild(field('Leave out these outlets', inWords(n, 'blockOutlets', 2, 'e.g. CNBC'), 'Outlet names as they appear under stories'));
+  var f = P.filtered || [], s2 = el('div');
+  s2.appendChild(txt('h4', 'ed-sub', 'Taken out this hour (' + f.length + ')'));
+  if (!f.length) s2.appendChild(txt('p', 'ed-note', NEWS.pool ? 'Nothing this hour.' : 'Loading…'));
+  var ul = el('ul', 'ed-stories');
+  f.forEach(function(x){
+    var li = el('li', 'ed-story'), main = el('div', 'ed-story-main');
+    main.appendChild(txt('b', null, x.title));
+    main.appendChild(txt('span', null, x.outlet + ' · ' + x.label + ' (“' + x.match + '”)'));
+    li.appendChild(main);
+    var restored = n.allow.indexOf(x.id) >= 0;
+    li.appendChild(btn(restored ? 'Restored' : 'Restore', 'small', function(){ if (!restored) { n.allow.push(x.id); changed(true); msg('Restored. It comes back on the paper when you publish.', 'ok'); } }));
+    ul.appendChild(li);
+  });
+  s2.appendChild(ul); s.appendChild(s2);
+  if (P.sources) {
+    var bad = P.sources.filter(function(x){ return !x.ok; });
+    s.appendChild(txt('p', 'ed-note', 'Feeds: ' + (P.sources.length - bad.length) + ' of ' + P.sources.length + ' working this hour' + (bad.length ? '. Not reached: ' + bad.map(function(x){ return x.outlet + ' (' + x.id + ')'; }).join(', ') : '.')));
+  }
+  return s;
+}
+
 function wireEditorHooks(){
   book.addEventListener('pointerdown', function(e){ if (ED.open && e.target.closest('[data-pz]')) e.stopPropagation(); }, true);
   book.addEventListener('click', function(e){
@@ -1202,6 +1362,10 @@ wireEditorHooks();
 hooks.issue = function(){ return current(); };
 hooks.rerender = function(){ renderPaper(); };
 loadAlmanac(ISSUE, liveUpdated);
+/* The newsroom sees this hour's news as readers do, plus what the filter took out. */
+function newsArrived(){ if (newsBusy() && !ED.open) return; renderPaper(); refreshLive(); if (ED.open) renderPanel(); }
+loadNews(newsArrived, true);
+setInterval(function(){ loadNews(newsArrived, true); }, 60000);
 applyTheme(ISSUE);
 buildSheets(ISSUE);
 measure();
@@ -1209,4 +1373,4 @@ if (window.ResizeObserver) new ResizeObserver(measure).observe(stage);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
 startLiveClock();
 openEditor();
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ setTimeout(checkFit, 300); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ if (NEWS.fontsPending && NEWS.pool) renderPaper(); setTimeout(checkFit, 300); });

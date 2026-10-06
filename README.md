@@ -12,10 +12,10 @@
 
 # The Daily Guble
 
-A newspaper website that looks and feels like a real paper. Readers turn the pages
-by dragging them, fold the paper in half, zoom in, read any story in large type,
-and play the crossword, sudoku and word search right on the page. The date,
-sunrise, tides and weather fill themselves in every day.
+A newspaper website that looks and feels like a real paper, with the world's news
+in it, refreshed every hour. Readers turn the pages by dragging them, fold the paper
+in half, zoom in, read any story in large type, and play the crossword and sudoku
+right on the page. The date, sunrise and weather are each reader's own.
 
 Editors sign in with a password and change everything from the browser: stories,
 photos, pages, columns, games and the look of the paper. One click publishes the
@@ -25,6 +25,7 @@ new edition, and it can go out to free web hosting.
 
 - [Quick start](#quick-start)
 - [For readers](#for-readers)
+- [The news](#the-news)
 - [Live dates, sun, tides and weather](#live-dates-sun-tides-and-weather)
 - [For editors: the newsroom](#for-editors-the-newsroom)
 - [Publishing the public website for free](#publishing-the-public-website-for-free)
@@ -115,6 +116,82 @@ developer tools.
 
 ---
 
+## The news
+
+Eight pages, laid out like a broadsheet: **Front page, World, India, Business,
+Science / Tech / Health, Opinion & Analysis, Sport & Culture, Puzzles & Almanac.**
+The full plan is in [docs/edition-format.md](docs/edition-format.md).
+
+### Where it comes from
+
+- **42 public news feeds** from 18 outlets: BBC News and BBC Sport, The Guardian, Al Jazeera, NPR, DW,
+  France 24, UN News, The New York Times, The Hindu, The Indian Express, Hindustan Times,
+  Scroll, CNBC and The Conversation. The list is in `engine/sources.js`.
+- **Currency rates:** the European Central Bank's daily reference rates (via Frankfurter).
+- **On this day:** three moments from Wikipedia.
+
+The paper prints each outlet's own headline and short summary, credits the outlet
+and links to the full story. It never copies whole articles or outlet photos.
+The Daily Guble is personal and non-commercial.
+
+### How the stories are chosen (no AI, just rules)
+
+1. **Fresh only:** stories from the last 24 hours (36 for opinion, culture and climate).
+2. **The filter:** every headline and summary is checked against word lists (`engine/filter.js`):
+   - **Taken out:** sexually explicit content, graphic gore in a headline, slurs, strong swearing.
+   - **Kept, with a short note above:** suicide, sexual violence, child abuse, eating disorders.
+     Gore that only appears deep in a summary (a war report, an art review) also gets a note.
+   - Words match as whole words, so place names like Scunthorpe never trip it.
+3. **The same event from several outlets becomes one story:** two headlines are about
+   the same event when they share most of their important words. "Tamil Nadu" counts as one word.
+   A story joins an event only when it matches most of that event's reports,
+   so the physics Nobel and the medicine Nobel stay apart.
+4. **Ranking:** more outlets on a story means bigger news. A story loses one outlet's
+   worth of weight every six hours.
+5. **Placing:** the front page takes the biggest stories, and every other page takes its own
+   section's. A story is printed only once in the whole paper. World news is split into
+   The Americas, Europe, Middle East & Africa and Asia-Pacific, from the first place a story names.
+6. **Fitting:** each column is drawn with more stories than it can hold. It is then measured
+   in the reader's browser with the real typefaces and trimmed to fit: summaries shorten
+   first, and the least important stories go.
+
+### Every hour, for free
+
+- **On the public site:** a small Cloudflare Pages Function (`functions/api/news/[part].js`)
+  fetches the feeds in six parts. Each part is read and filtered, then kept in Cloudflare's
+  cache for the hour. Each request stays small, well inside the free plan's limits.
+- **When the hour turns:** the last hour's copy is served straight away while a fresh one is built.
+- **In the reader's browser:** the parts are combined, the stories ranked and the pages laid out.
+  The result is saved in the browser, so the paper opens instantly, even offline.
+- **No jumping:** new news never moves the page while someone is reading, zoomed in or mid-puzzle.
+  It waits until they're done.
+- **In the newsroom:** `server.js` serves the same `/api/news` itself, so the preview matches the site.
+
+### What the editor can do
+
+On a news page, the **This page** tab shows every story on it:
+
+- **Pin here:** puts a story at the top of this page.
+- **Hide:** takes a story off the whole paper.
+- **Keep these stories:** freezes the page as it is, so it stops updating on the hour.
+- **Add your own story:** a headline, summary, source and optional link, printed at the top of the page.
+- **Click any story on the paper:** shows its summary, sources and a link to the original.
+
+On the **Edition** tab, **News filter** has:
+
+- the built-in word lists
+- your own **also take out** words, with `*` for any ending
+- **never take out because of** words, for false alarms
+- **outlets to leave out**
+- **Taken out this hour**: every story the filter removed, each with a **Restore** button
+- how many feeds answered this hour
+
+Filter changes reach the public site when you publish.
+
+The **Pages** tab can add any of the news pages (`News: world` and so on) next to hand-made pages.
+
+---
+
 ## Live dates, sun, tides and weather
 
 Type any of these codes into any text in the paper: a headline, a story, a table,
@@ -135,6 +212,7 @@ the nameplate. Readers see today's real value instead of the code.
 | `{{high}}` `{{low}}` | today's high · tonight's low |
 | `{{forecast}}` | Mostly Sunny. High 64°. Wind W 15 mph. |
 | `{{tonight}}` | Mostly Clear, 42° |
+| `{{updated}}` | When the news was last updated, e.g. 5:00 p.m. |
 | `{{weatherPlace}}` | where the weather is for, e.g. Gurugram |
 | `{{tomorrowWeather}}` `{{dayAfterWeather}}` | Sunny, 59° |
 
@@ -419,6 +497,7 @@ drafts stay in their browsers.
 - **No reader cookies:** readers get no accounts and no tracking. The only cookie is the editor's sign-in cookie.
 - **Puzzle progress and cached data** are kept only in the reader's own browser.
 - **Outside services:** readers' browsers connect directly to NOAA (tides), the US National Weather Service or Open-Meteo (weather), BigDataCloud (to find the reader's town from their connection), and Google Fonts (typefaces). Those services see the reader's IP address, as they would for any website using them.
+- **The news:** readers' browsers fetch it from the paper's own site (`/api/news`), never from the outlets. Only the Cloudflare function contacts the news sites. A reader's browser connects to an outlet only when the reader opens one of its links.
 - **Location:** the paper never asks for a reader's location by itself. Only the **Use my exact location** button does, and the coordinates are rounded to about 1 km before being sent to the weather and town-name services. The reader's town is remembered only in their own browser.
 
 ---
@@ -493,7 +572,8 @@ Every file in [`brand/`](brand/README.md) is a vector outline (no fonts needed),
 
 - **`server.js`** is the newsroom server. It handles the sign-in page and sessions, serves the editor to signed-in editors, saves editions and history, and publishes the website. It also serves a preview of the paper at `/`.
 - **`publish.js`** builds the public website files and pushes only the changed ones to GitHub.
-- **Browser code:** the server wraps the files in `src/` into two script bundles. `paper.js` is for readers (`themes.js` + `core.js` + `almanac.js` + `reader.js`). The editor's bundle swaps `reader.js` for `editor.js`. The server also reads `themes.js` itself, to put the right fonts in each page's head.
+- **Browser code:** the server wraps the files in `src/` into two script bundles. `paper.js` is for readers (`themes.js` + `brand.js` + the news engine's combining step + `core.js` + `news.js` + `almanac.js` + `reader.js`). The editor's bundle swaps `reader.js` for `editor.js`. The server also reads `themes.js` itself, to put the right fonts in each page's head.
+- **`engine/`** is the news engine, plain JavaScript modules with no dependencies. The same files run on Cloudflare (in `functions/`), in the newsroom server and, for the combining step, in readers' browsers. Run its checks with `node engine/test.js`.
 
 ### Project layout
 
@@ -505,7 +585,17 @@ src/brand.js            the logo, built into the paper (generated from brand/ by
 src/core.js             the paper: rendering, page curl, zoom, fold, story reader, puzzles, live codes
 src/almanac.js          date, sun and moon maths; fetches tides (NOAA) and weather (NWS / Open-Meteo)
 src/reader.js           starts the reader's bundle
+src/news.js             the news pages: loads the hour's news, lays out and fits the columns
 src/editor.js           the newsroom editor (signed-in editors only)
+engine/sources.js       the news feeds, and the sections and regions they fill
+engine/parse.js         reads RSS and Atom feeds
+engine/filter.js        the content filter's word lists and rules
+engine/places.js        works out which region a story is about
+engine/cluster.js       spots the same event reported by different outlets
+engine/combine.js       merges, ranks and picks the stories for each section (also runs in browsers)
+engine/edition.js       fetches and processes a part of the feeds; builds the whole edition
+engine/test.js          checks for all of the above (node engine/test.js)
+functions/api/news/     the Cloudflare Pages Function that serves the hourly news
 public/                 paper.css, sign-in page, icons, app manifest
 admin/editor.css        newsroom styles (signed-in editors only)
 views/                  HTML for the paper, the sign-in page, the newsroom and the static website
@@ -528,6 +618,8 @@ Dockerfile, compose.yaml, Caddyfile   container and HTTPS setup
 | `PUT /api/issue` | Publish a new edition | Editors |
 | `GET /api/history`, `GET /api/history/:id` | Published editions | Editors |
 | `GET /api/site`, `POST /api/site/publish` | Website status; publish it now | Editors |
+| `GET /api/news/:part` | One part of this hour's news (`0` to `5`, or `extras`) | Anyone |
+| `GET /api/news/:part?include=filtered` | The same, plus what the filter took out | Editors |
 | `GET /healthz` | "ok" when the server is running | Anyone |
 
 ### The edition file
@@ -538,7 +630,12 @@ An edition is one JSON document:
 masthead   name, motto, volume, number, date, place, price, meta, pages
 location   lat, lon, timeZone, tideStation, units ("F" or "C")
 theme      preset, plus optional colors and fonts
-pages      a list of pages; each has:
+news       blockWords, allowWords, blockOutlets, allow (restored story ids), hide (hidden story ids)
+pages      a list of pages; each is either
+             a news page: { news: "front" | "world" | "india" | "business" | "science" | "opinion" | "sport",
+                            pin: [ story ids ], own: [ { title, summary, outlet, link, kicker } ],
+                            locked: { at, stories: [ ... ] } }
+           or a hand-made page:
              plate: true (front page) or runhead: { center }
              columns: [ { w: width, blocks: [ ... ] } ]
              strip: optional footer row, same shape as columns

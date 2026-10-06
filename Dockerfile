@@ -15,6 +15,7 @@ COPY admin ./admin
 COPY views ./views
 COPY seed ./seed
 COPY scripts ./scripts
+COPY engine ./engine
 
 # The only writable place: the edition and its history.
 RUN mkdir -p /data && chown node:node /data && chmod 700 /data

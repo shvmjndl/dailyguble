@@ -187,7 +187,8 @@ var LIVE_TOKENS = [
   ['highWater', 'Next high tide'], ['lowWater', 'Next low tide'], ['moon', 'Moon phase'], ['moonLit', 'Moon, percent lit'],
   ['temp', 'Temperature now'], ['conditions', 'Sky right now'], ['forecast', 'Short forecast'],
   ['high', 'Today’s high'], ['low', 'Tonight’s low'], ['tonight', 'Tonight'],
-  ['tomorrowWeather', 'Tomorrow’s weather'], ['dayAfterWeather', 'The day after'], ['weatherPlace', 'Where the weather is for']
+  ['tomorrowWeather', 'Tomorrow’s weather'], ['dayAfterWeather', 'The day after'], ['weatherPlace', 'Where the weather is for'],
+  ['updated', 'When the news was last updated']
 ];
 var TOKEN_RE = /\{\{\s*(\w+)\s*\}\}/g;
 function liveTZ(){ return (ALMANAC && ALMANAC.timeZone) || 'America/New_York'; }
@@ -230,6 +231,7 @@ function liveValues(){
     highWater: next('high'), lowWater: next('low'),
     moon: A.moon ? A.moon.phase : '—', moonLit: A.moon ? A.moon.illumination + '%' : '—',
     weatherPlace: A.placeName || '—',
+    updated: newsUpdatedText(),
     temp: wx(function(W){ return W.current.temp + '°'; }),
     conditions: wx(function(W){ return W.current.text; }),
     forecast: wx(function(W){ return W.forecast; }),
@@ -502,8 +504,9 @@ function SCHEMA_LABEL(type){ return hooks.labels[type] || type; }
 /* =========================================================
    PAGES
    ========================================================= */
-function renderPage(page, i, N, m){
+function renderPage(page, i, N, m, issue){
   var sheet = el('div', 'sheet'), face = el('div', 'face'), paper = el('div', 'paper');
+  var news = page.news ? newsColumns(page, issue || ISSUE) : null;     // news pages are laid out from the hour's stories
   if (page.plate) {
     paper.appendChild(el('div', 'plate',
       '<div class="folio"><span>' + (m.volume || '') + ' &nbsp; ' + (m.number || '') + '</span><span>' + (m.place || '') + '</span><span>' + (m.price || '') + '</span></div>' +
@@ -518,18 +521,20 @@ function renderPage(page, i, N, m){
     var rh = page.runhead || {};
     paper.appendChild(el('div', 'runhead',
       '<span class="rh-left"><span class="rh-badge">' + BRAND_BADGE + '</span>' + (rh.left || ((m.name || '') + ' &nbsp;&middot;&nbsp; ' + (m.date || ''))) + '</span>' +
-      '<em>' + (rh.center || '') + '</em>' +
+      '<em>' + (rh.center || (news && NEWS_TEMPLATES[page.news] ? NEWS_TEMPLATES[page.news].center : '')) + '</em>' +
       '<span>' + (rh.right || ('Page ' + (i + 1))) + '</span>'));
   }
-  var cols = page.columns || [];
+  var cols = news ? news.cols : page.columns || [];
+  if (news) sheet.classList.add('news-page');
   var grid = el('div', 'grid');
   grid.style.gridTemplateColumns = cols.map(function(c){ return (c.w || 1) + 'fr'; }).join(' ') || '1fr';
   cols.forEach(function(c){ c.blocks = c.blocks || []; var col = el('div', 'col'); renderBlocks(c.blocks, col); grid.appendChild(col); });
   paper.appendChild(grid);
-  if (page.strip && page.strip.length) {
+  var stripCols = news ? news.strip : page.strip;
+  if (stripCols && stripCols.length) {
     var strip = el('div', 'strip');
-    strip.style.gridTemplateColumns = page.strip.map(function(c){ return (c.w || 1) + 'fr'; }).join(' ');
-    page.strip.forEach(function(c){ c.blocks = c.blocks || []; var cell = el('div', 'cell'); renderBlocks(c.blocks, cell); strip.appendChild(cell); });
+    strip.style.gridTemplateColumns = stripCols.map(function(c){ return (c.w || 1) + 'fr'; }).join(' ');
+    stripCols.forEach(function(c){ c.blocks = c.blocks || []; var cell = el('div', 'cell'); renderBlocks(c.blocks, cell); strip.appendChild(cell); });
     paper.appendChild(strip);
   }
   face.appendChild(paper);
@@ -1000,7 +1005,7 @@ function WordSearch(cfg){
    STORY READER: tap a story to read it in large type,
    then swipe or use the arrows to go story by story.
    ========================================================= */
-var SKIP_READ = { crossword: 1, sudoku: 1, wordsearch: 1, rule: 1, sect: 1, kicker: 1 };
+var SKIP_READ = { crossword: 1, sudoku: 1, wordsearch: 1, rule: 1, sect: 1, kicker: 1, inside: 1, notice: 1 };
 var RD = { list: [], i: 0, open: false, lastFocus: null };
 function blockType(n){ var info = n && BIDMAP[n.dataset.bid]; return info ? info.block.type : null; }
 /* A story is a headline plus the photo, text, quotes and tables that follow it in
@@ -1015,16 +1020,19 @@ function storyNodes(){
         if (!n.classList.contains('block')) return;
         var info = BIDMAP[n.dataset.bid], t = info && info.block.type;
         if (!t || SKIP_READ[t]) return;
-        var headed = (t === 'article' || t === 'head') && !!(info.block.head || info.block.text);
+        var headed = ((t === 'article' || t === 'head') && !!(info.block.head || info.block.text)) || t === 'story';
         var cont = CONTINUES[t] || (t === 'article' && !headed);
         if (headed && cur && !cur.headed && !cur.standalone) { cur.nodes.push(n); cur.headed = true; return; }
         if (cont && cur && !cur.standalone) { cur.nodes.push(n); return; }
-        cur = { nodes: [n], node: n, page: pi, headed: headed, standalone: !headed && !cont };
+        cur = { nodes: [n], node: n, page: pi, headed: headed, standalone: !headed && !cont, rank: info.block.fit != null ? info.block.fit : 5000 };
         out.push(cur);
       });
     });
   });
-  return out;
+  // on a news page, read the lead story first and the briefs last, whatever column they sit in
+  return out.map(function(s, k){ s.k = k; return s; }).sort(function(a, b){
+    return a.page - b.page || (sheets[a.page].classList.contains('news-page') ? (a.rank === 0 ? 5000 : a.rank) - (b.rank === 0 ? 5000 : b.rank) : 0) || a.k - b.k;
+  });
 }
 function storyIndexOf(node){
   for (var k = 0; k < RD.list.length; k++) if (RD.list[k].nodes.indexOf(node) >= 0) return k;
@@ -1225,10 +1233,17 @@ function buildSheets(issue){
   PZ.release();
   finishCurl();                                   // never leave a half-turned page behind a redraw
   sheets.forEach(function(s){ s.remove(); });
-  BID = 0; BIDMAP = {}; LIVE_NODES = [];
+  BID = 0; BIDMAP = {}; LIVE_NODES = []; NEWS.used = {};
   var pages = issue.pages || [], m = issue.masthead || {};
-  sheets = pages.map(function(p, i){ return renderPage(p, i, pages.length, m); });
-  sheets.forEach(function(s){ book.appendChild(s); applyLive(s); });
+  NEWS.fontsPending = !!(document.fonts && document.fonts.status !== 'loaded');
+  // one page at a time: each news page is fitted before the next picks its stories
+  sheets = pages.map(function(p, i){
+    var s = renderPage(p, i, pages.length, m, issue);
+    book.appendChild(s);
+    if (p.news) fitNewsSheet(s);
+    applyLive(s);
+    return s;
+  });
   N = sheets.length;
   idx = Math.max(0, Math.min(idx, N - 1));
   dots.innerHTML = '';
@@ -1476,6 +1491,8 @@ function wireView(){
     if (isEditing() || stage.__justDragged) return;
     var c = e.target.closest('.corner'); if (c) { go(parseInt(c.dataset.nav, 10)); return; }
     if (e.target.closest('[data-pz], .wx-locate')) return;
+    var gt = e.target.closest('[data-goto]');
+    if (gt && zoom <= 1.02) { goTo(parseInt(gt.dataset.goto, 10)); return; }
     var now = Date.now(), x = e.clientX, y = e.clientY;
     clearTimeout(tapTimer);
     if (lastTap && now - lastTap.t < 320 && Math.hypot(x - lastTap.x, y - lastTap.y) < 40) { lastTap = null; zoomAt(x, y); return; }
