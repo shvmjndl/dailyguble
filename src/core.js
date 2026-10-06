@@ -482,13 +482,17 @@ function renderPage(page, i, N, m){
   if (page.plate) {
     paper.appendChild(el('div', 'plate',
       '<div class="folio"><span>' + (m.volume || '') + ' &nbsp; ' + (m.number || '') + '</span><span>' + (m.place || '') + '</span><span>' + (m.price || '') + '</span></div>' +
-      '<h1>' + (m.name || '') + '</h1>' +
+      '<div class="nameplate">' +
+        '<div class="ear ear-brand">' + BRAND_BADGE + '</div>' +
+        '<h1>' + (m.name || '') + '</h1>' +
+        '<div class="ear ear-weather"><span class="ear-label">Weather</span><b>{{temp}}</b><span>{{conditions}}</span></div>' +
+      '</div>' +
       (m.motto ? '<div class="motto">' + m.motto + '</div>' : '') +
       '<div class="dateline"><span>' + (m.date || '') + '</span><span>' + (m.meta || '') + '</span><span>' + (m.pages || '') + '</span></div>'));
   } else {
     var rh = page.runhead || {};
     paper.appendChild(el('div', 'runhead',
-      '<span>' + (rh.left || ((m.name || '') + ' &nbsp;&middot;&nbsp; ' + (m.date || ''))) + '</span>' +
+      '<span class="rh-left"><span class="rh-badge">' + BRAND_BADGE + '</span>' + (rh.left || ((m.name || '') + ' &nbsp;&middot;&nbsp; ' + (m.date || ''))) + '</span>' +
       '<em>' + (rh.center || '') + '</em>' +
       '<span>' + (rh.right || ('Page ' + (i + 1))) + '</span>'));
   }
@@ -1059,7 +1063,11 @@ function showStory(i){
     b.appendChild(txt('b', null, headlineOf(nx.node) + ' →'));
     b.addEventListener('click', function(){ showStory(RD.i + 1); });
     foot.appendChild(b);
-  } else foot.appendChild(txt('span', 'reader-end', 'That’s the whole paper. See you tomorrow.'));
+  } else {
+    var end = el('div', 'reader-end'); end.innerHTML = BRAND_BADGE;
+    end.appendChild(txt('span', null, 'That’s the whole paper. See you tomorrow.'));
+    foot.appendChild(end);
+  }
   document.getElementById('rdScroll').scrollTop = 0;
   if (s.page !== idx) { idx = s.page; zoom = 1; panX = 0; panY = 0; apply(); paint(); }
 }
@@ -1152,7 +1160,7 @@ function showHint(){
    ========================================================= */
 var SHELL =
   '<div class="stage" id="stage"><div class="book" id="book"><div class="stack" aria-hidden="true"><i></i><i></i></div></div></div>' +
-  '<div class="bar">' +
+  '<div class="bar"><div class="brandmark" aria-hidden="true">' + BRAND_WORDMARK_DARK + '</div>' +
     '<div class="grp"><button class="ctl" id="prev" aria-label="Previous page">&#8592;</button>' +
     '<span class="readout" id="pageRead">Page 1</span><span class="dots" id="dots" aria-hidden="true"></span>' +
     '<button class="ctl" id="next" aria-label="Next page">&#8594;</button></div>' +

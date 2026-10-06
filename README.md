@@ -1,4 +1,14 @@
-<p align="center"><img src="brand/guble-wordmark.svg" alt="The Daily Guble" width="440"></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/guble-wordmark-dark.svg">
+    <img src="brand/guble-wordmark.svg" alt="The Daily Guble" width="460">
+  </picture>
+</p>
+
+<p align="center"><b>The Daily Guble</b>: a newspaper you read like paper.<br>
+<a href="https://dailyguble.pages.dev">dailyguble.pages.dev</a></p>
+
+<p align="center"><img src="brand/screenshot-front.jpg" alt="The front page of The Daily Guble, with the lighthouse badge and a live weather ear in the masthead" width="900"></p>
 
 # The Daily Guble
 
@@ -24,6 +34,7 @@ new edition, and it can go out to free web hosting.
 - [Privacy](#privacy)
 - [Your data and backups](#your-data-and-backups)
 - [Troubleshooting](#troubleshooting)
+- [Brand](#brand)
 - [For developers](#for-developers)
 
 ---
@@ -445,6 +456,25 @@ The **Edition** tab can also download the current edition as a file and load one
 
 ---
 
+## Brand
+
+<img src="brand/guble-icon.svg" alt="The lighthouse badge" width="88" align="left">
+
+The logo is **Harbor Light**: the word *guble* with a lighthouse standing in for the "l", its warm beam sweeping back over the word. It's on the front-page masthead (left ear, next to a live weather ear), beside the paper's name on every inside page, in the desk toolbar, at the end of the story reader, on the sign-in pass, in the newsroom, as the browser-tab and home-screen icon, and on link previews.
+<br clear="left">
+
+| Colour | Hex | Used for |
+|---|---|---|
+| Ink | `#17150f` | Letters and the tower |
+| Newsprint | `#e7e1d1` | Backgrounds |
+| Press red | `#95291c` | The band on the tower |
+| Lamp | `#f6d77a` | The lit window |
+| Beam | `#f2b53c` | The light (at 42–45%) |
+
+Every file in [`brand/`](brand/README.md) is a vector outline (no fonts needed), with versions for light and dark backgrounds, a round badge, a square app icon and a link-preview card. The brand guide explains which to use where. If you change the logo files, run `node scripts/build-brand.js` to rebuild the copy built into the paper.
+
+---
+
 ## For developers
 
 ### How it fits together
@@ -459,6 +489,7 @@ The **Edition** tab can also download the current edition as a file and load one
 server.js               newsroom server: sign-in, sessions, saving, history, publishing
 publish.js              builds the static website; pushes changed files to GitHub
 src/themes.js           theme presets, typefaces and colours (shared with the server)
+src/brand.js            the logo, built into the paper (generated from brand/ by scripts/build-brand.js)
 src/core.js             the paper: rendering, page curl, zoom, fold, story reader, puzzles, live codes
 src/almanac.js          date, sun and moon maths; fetches tides (NOAA) and weather (NWS / Open-Meteo)
 src/reader.js           starts the reader's bundle
@@ -468,6 +499,7 @@ admin/editor.css        newsroom styles (signed-in editors only)
 views/                  HTML for the paper, the sign-in page, the newsroom and the static website
 seed/issue.json         the sample edition used the first time the server starts
 scripts/hash-password.js  turns a password into the stored hash
+brand/                  the Harbor Light logo files and brand guide
 run.sh                  one-command local start
 Dockerfile, compose.yaml, Caddyfile   container and HTTPS setup
 .env.example            every setting, with explanations

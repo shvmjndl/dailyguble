@@ -419,7 +419,6 @@ button.ctl.read:hover{background:linear-gradient(#a33322,#7c2418)}
 .reader-next b{font-family:var(--f-head);font-size:19px;font-weight:700;line-height:1.2}
 .reader-next:hover{background:#352e26}
 .reader-next:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
-.reader-end{display:block;text-align:center;font:italic 17px/1.4 var(--f-head);color:#cbbfa6;padding:12px}
 body.editing .reader-sheet{user-select:text}
 @media (hover:hover){ body:not(.editing) .book .col > .block:not(.pz):hover,
   body:not(.editing) .book .strip > .cell > .block:hover{cursor:zoom-in} }
@@ -452,3 +451,20 @@ body.editing .reader-sheet{user-select:text}
 .sheet.buried{visibility:hidden}
 /* Phones: skip the blurred shadow under the turning page (the fold shadows stay). */
 @media (pointer:coarse){ .curl-flap-wrap{filter:none} }
+
+/* ---------- the Harbor Light identity on the paper ---------- */
+.nameplate{display:grid;grid-template-columns:104px 1fr 104px;align-items:center;gap:12px}
+.nameplate h1{margin:2px 0 4px}
+.ear{height:70px;display:flex;align-items:center;justify-content:center}
+.ear-brand svg{width:66px;height:66px;display:block}
+.ear-weather{flex-direction:column;gap:0;border:1px solid var(--ink);padding:4px 6px;font-family:var(--f-util);text-align:center;line-height:1.15}
+.ear-weather .ear-label{font-size:9px;font-weight:700;color:var(--press-red)}
+.ear-weather b{font-family:var(--f-head);font-weight:900;font-size:24px;line-height:1}
+.ear-weather span:last-child{font-size:9px;color:var(--ink-soft);max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rh-left{display:inline-flex;align-items:center;gap:6px}
+.rh-badge svg{width:16px;height:16px;display:block}
+.brandmark{flex:0 0 auto;margin-right:auto;padding-right:6px;opacity:.92}
+.brandmark svg{height:30px;width:auto;display:block}
+@media (max-width:980px){ .brandmark{display:none} }
+.reader-end{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;font:italic 17px/1.4 var(--f-head);color:#cbbfa6;padding:16px 12px 6px}
+.reader-end svg{width:58px;height:58px;display:block}

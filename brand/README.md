@@ -13,6 +13,16 @@ warm beam sweeping back across the word. The paper keeps the light on.
 
 Every letter is a vector outline, so the files print and scale cleanly with no fonts installed.
 
+**Where it appears**
+
+- **Front page:** the round badge is the masthead's left ear, with a live weather ear opposite.
+- **Inside pages:** a small badge beside the paper's name in the running head.
+- **Desk toolbar:** the wordmark, on wider screens.
+- **Story reader:** the badge at the end of the paper.
+- **Elsewhere:** the sign-in pass and newsroom header, the browser tab and home-screen icon, and link previews.
+
+The paper carries its own copy of the badge and wordmark in `src/brand.js`. After changing the files here, run `node scripts/build-brand.js` to update it.
+
 **Colours**
 
 | Name | Hex | Used for |

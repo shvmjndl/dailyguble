@@ -255,7 +255,7 @@ function asset(body, type) {
   if (/text|javascript|json|svg|manifest/.test(type)) a.gz = zlib.gzipSync(body, { level: 9 });   // compressed once, at start-up
   return a;
 }
-const bundle = (...files) => '(function(){"use strict";\n' + ['src/themes.js'].concat(files).map(read).join('\n') + '\n})();\n';
+const bundle = (...files) => '(function(){"use strict";\n' + ['src/themes.js', 'src/brand.js'].concat(files).map(read).join('\n') + '\n})();\n';
 const PUBLIC_ASSETS = {
   '/paper.css': asset(read('public/paper.css'), 'text/css; charset=utf-8'),
   '/paper.js': asset(bundle('src/core.js', 'src/almanac.js', 'src/reader.js'), 'text/javascript; charset=utf-8'),
