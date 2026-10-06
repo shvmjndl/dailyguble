@@ -2217,7 +2217,8 @@ function finishCurl(){
 function animateTurn(step){
   finishCurl();
   var reducedMotion = document.body.classList.contains('reduced');
-  if (reducedMotion || (step > 0 ? idx >= N - 1 : idx <= 0)) return false;
+  // no animation frames come while the tab is hidden: turn straight away instead
+  if (reducedMotion || document.hidden || (step > 0 ? idx >= N - 1 : idx <= 0)) return false;
   if (zoom > 1.02) { zoom = 1; panX = 0; panY = 0; glide(); apply(); }
   var c, H = pageH();
   if (step > 0) { c = startCurl(sheets[idx], 'fwd', 'bottom'); c.from = { x: PAGE_W, y: H }; c.to = { x: -PAGE_W, y: H }; c.commitIdx = idx + 1; }
@@ -2227,6 +2228,7 @@ function animateTurn(step){
 }
 
 function wireView(){
+  document.addEventListener('visibilitychange', function(){ if (document.hidden) finishCurl(); });
   prevBtn.addEventListener('click', function(){ go(-1); });
   nextBtn.addEventListener('click', function(){ go(1); });
   document.getElementById('zoomIn').addEventListener('click', function(){ glide(); setZoom(zoom * 1.25, true); });
@@ -2237,7 +2239,7 @@ function wireView(){
   book.addEventListener('click', function(e){
     if (isEditing() || stage.__justDragged) return;
     var c = e.target.closest('.corner'); if (c) { go(parseInt(c.dataset.nav, 10)); return; }
-    var pc = e.target.closest('.page-clip'); if (pc) { togglePageClip(pc); return; }
+    var pc = e.target.closest('.page-clip'); if (pc) { finishCurl(); togglePageClip(pc); return; }
     if (e.target.closest('.folded-edge')) { setFold(true, foldSide === 'top' ? 'bottom' : 'top'); return; }
     if (e.target.closest('[data-pz], .wx-locate')) return;
     var gt = e.target.closest('[data-goto]');
