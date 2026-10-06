@@ -537,8 +537,8 @@ function timeZones(){
   try { return Intl.supportedValuesOf('timeZone'); } catch (e) { return null; }
 }
 function locationSection(onUpdate){
-  var loc = draftLocation(), s = sec('Location for live times');
-  s.appendChild(txt('p', 'ed-note', 'Sunrise, sunset, the moon and the date are worked out for this spot, in its time zone. Weather comes from the US National Weather Service (Open-Meteo outside the US). Tides come from the NOAA station you pick.'));
+  var loc = draftLocation(), s = sec('The paper\u2019s town');
+  s.appendChild(txt('p', 'ed-note', 'Each reader sees their own date, sunrise and weather, for wherever they are. This is the paper\u2019s own town: its NOAA station gives the tide table (in the town\u2019s time), and readers whose location can\u2019t be found see this town\u2019s weather.'));
   var r = el('div', 'ed-row');
   var lat = inNum(loc, 'lat', -90, 90, 0.0001), lon = inNum(loc, 'lon', -180, 180, 0.0001);
   [lat, lon].forEach(function(i){ i.addEventListener('input', function(){ previewLocation(onUpdate); }); });

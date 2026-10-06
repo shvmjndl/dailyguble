@@ -143,27 +143,83 @@ function fetchWeather(loc){
   return job.then(function(w){ w.fetchedAt = Date.now(); remember(key, w); return w; });
 }
 
+/* ---------- where the reader is ---------- */
+/* Each reader gets their own date, sun and weather. Their town comes from their
+   connection (city level, no permission needed), or from their device if they tap
+   "Use my exact location". Coordinates are rounded to about 1 km before use. */
+var PLACE_API = 'https://api-bdc.io/data/reverse-geocode-client?localityLanguage=en';
+function deviceTimeZone(fallback){
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || fallback; } catch (e) { return fallback; }
+}
+function placeName(d){ return (d && (d.city || d.locality || d.principalSubdivision)) || ''; }
+function storedPlace(){ var p = store('reader-place'); return p && isFinite(p.lat) && isFinite(p.lon) ? p : null; }
+function findReaderPlace(){
+  var p = storedPlace();
+  if (p && (p.source === 'device' || Date.now() - p.at < 12 * 3600000)) return Promise.resolve(p);
+  return getJSON(PLACE_API).then(function(d){
+    if (!d || !isFinite(d.latitude) || !isFinite(d.longitude) || (d.latitude === 0 && d.longitude === 0)) throw new Error('no place');
+    var q = { lat: Math.round(d.latitude * 100) / 100, lon: Math.round(d.longitude * 100) / 100, name: placeName(d), cc: d.countryCode || '', source: 'connection', at: Date.now() };
+    store('reader-place', q);
+    return q;
+  });
+}
+/* Asked only when the reader taps the button. Calls back with true when the place changed. */
+function useExactLocation(done){
+  if (!navigator.geolocation) { done(false, 'This browser can’t share its location.'); return; }
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var lat = Math.round(pos.coords.latitude * 100) / 100, lon = Math.round(pos.coords.longitude * 100) / 100;
+    getJSON(PLACE_API + '&latitude=' + lat + '&longitude=' + lon).catch(function(){ return {}; }).then(function(d){
+      store('reader-place', { lat: lat, lon: lon, name: placeName(d) || 'your location', cc: d.countryCode || '', source: 'device', at: Date.now() });
+      done(true);
+    });
+  }, function(err){
+    done(false, err && err.code === 1 ? 'Location not shared, so the forecast uses the town your connection suggests.' : 'Couldn’t get your location just now.');
+  }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 6 * 3600000 });
+}
+
 /* ---------- everything for today ---------- */
 function weatherCacheFor(loc){ return cached('weather:' + loc.lat.toFixed(3) + ',' + loc.lon.toFixed(3) + ':' + loc.units, 6 * 3600000); }
 var almanacJob = 0;
 function loadAlmanac(issue, onUpdate){
-  var loc = locationOf(issue), day = datePartsIn(new Date(), loc.timeZone), job = ++almanacJob;
+  var paper = locationOf(issue), job = ++almanacJob, tz = deviceTimeZone(paper.timeZone);
+  var day = datePartsIn(new Date(), tz), tideDay = datePartsIn(new Date(), paper.timeZone);
+  var paperPlace = String(((issue && issue.masthead) || {}).place || '').replace(/<[^>]*>/g, '').split(',')[0] || 'the paper’s town';
   var A = {
-    date: day.y + '-' + pad2(day.m) + '-' + pad2(day.d), timeZone: loc.timeZone, lat: loc.lat, lon: loc.lon, units: loc.units,
-    sunrise: null, sunset: null, moon: moonOn(Date.UTC(day.y, day.m - 1, day.d, 12)),
-    tideStation: loc.tideStation || null, tides: [], tideError: null, weather: null, weatherError: null, loadedAt: Date.now()
+    date: day.y + '-' + pad2(day.m) + '-' + pad2(day.d), timeZone: tz,
+    moon: moonOn(Date.UTC(day.y, day.m - 1, day.d, 12)),
+    tideStation: paper.tideStation || null, tideTimeZone: paper.timeZone, tides: [], tideError: null,
+    weather: null, weatherError: null, loadedAt: Date.now()
   };
-  var rise = sunEvent(day.y, day.m, day.d, loc.lat, loc.lon, true), set = sunEvent(day.y, day.m, day.d, loc.lat, loc.lon, false);
-  A.sunrise = rise == null ? null : new Date(rise).toISOString();
-  A.sunset = set == null ? null : new Date(set).toISOString();
-  // Show whatever this browser already knows straight away; refresh in the background.
-  if (A.tideStation) A.tides = cached('tides:' + A.tideStation + ':' + day.y + pad2(day.m) + pad2(day.d), 7 * 86400000) || [];
-  A.weather = weatherCacheFor(loc);
+  /* Sun and weather follow the reader's place once known; until then, the paper's town. */
+  function placeAt(p){
+    var here = p ? { lat: p.lat, lon: p.lon, timeZone: tz, units: p.cc === 'US' || p.cc === 'LR' ? 'F' : 'C' }
+                 : { lat: paper.lat, lon: paper.lon, timeZone: tz, units: paper.units };
+    A.lat = here.lat; A.lon = here.lon; A.units = here.units;
+    A.placeName = p ? (p.name || 'where you are') : paperPlace;
+    A.placeSource = p ? p.source : 'paper';
+    var rise = sunEvent(day.y, day.m, day.d, here.lat, here.lon, true), set = sunEvent(day.y, day.m, day.d, here.lat, here.lon, false);
+    A.sunrise = rise == null ? null : new Date(rise).toISOString();
+    A.sunset = set == null ? null : new Date(set).toISOString();
+    A.weather = weatherCacheFor(here);
+    A.weatherError = null;
+    return here;
+  }
+  var here = placeAt(storedPlace());
+  // Tides belong to the paper's harbour, in its own time zone.
+  if (A.tideStation) A.tides = cached('tides:' + A.tideStation + ':' + tideDay.y + pad2(tideDay.m) + pad2(tideDay.d), 7 * 86400000) || [];
   ALMANAC = A;
   function done(){ if (job === almanacJob && onUpdate) onUpdate(); }
-  if (A.tideStation) fetchTides(A.tideStation, day).then(function(t){ A.tides = t; A.tideError = null; done(); },
+  function weatherFor(loc){
+    fetchWeather(loc).then(function(w){ if (A.lat === loc.lat && A.lon === loc.lon) { A.weather = w; A.weatherError = null; done(); } },
+      function(){ if (!A.weather) A.weatherError = 'The forecast is unavailable right now.'; done(); });
+  }
+  if (A.tideStation) fetchTides(A.tideStation, tideDay).then(function(t){ A.tides = t; A.tideError = null; done(); },
     function(){ if (!A.tides.length) A.tideError = 'Tide predictions are unavailable right now.'; done(); });
-  fetchWeather(loc).then(function(w){ A.weather = w; A.weatherError = null; done(); },
-    function(){ if (!A.weather) A.weatherError = 'The forecast is unavailable right now.'; done(); });
+  weatherFor(here);
+  findReaderPlace().then(function(p){
+    if (job !== almanacJob) return;
+    if (p.lat === A.lat && p.lon === A.lon && A.placeSource !== 'paper') return;   // already showing this place
+    weatherFor(placeAt(p)); done();
+  }, function(){ /* keep the paper's town */ });
   return A;
 }

@@ -15,7 +15,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 /* Readers' browsers fetch tides and weather themselves, straight from these public services. */
-const DATA_SOURCES = ['https://api.tidesandcurrents.noaa.gov', 'https://api.weather.gov', 'https://api.open-meteo.com'];
+const DATA_SOURCES = ['https://api.tidesandcurrents.noaa.gov', 'https://api.weather.gov', 'https://api.open-meteo.com', 'https://api-bdc.io'];
 const SITE_CSP = [
   "default-src 'none'", "script-src 'self'", "style-src 'self' https://fonts.googleapis.com", "font-src https://fonts.gstatic.com",
   "img-src 'self' data: blob:", 'connect-src ' + DATA_SOURCES.join(' '), "manifest-src 'self'",
@@ -67,7 +67,7 @@ function buildSite(rawIssue, assets) {
     '  X-Content-Type-Options: nosniff',
     '  Referrer-Policy: no-referrer',
     '  X-Frame-Options: DENY',
-    '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+    '  Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=()',  // location only when a reader taps the button
     '  Content-Security-Policy: ' + SITE_CSP + "; frame-ancestors 'none'",
     '/',
     '  Cache-Control: no-cache',

@@ -135,6 +135,7 @@ the nameplate. Readers see today's real value instead of the code.
 | `{{high}}` `{{low}}` | today's high · tonight's low |
 | `{{forecast}}` | Mostly Sunny. High 64°. Wind W 15 mph. |
 | `{{tonight}}` | Mostly Clear, 42° |
+| `{{weatherPlace}}` | where the weather is for, e.g. Gurugram |
 | `{{tomorrowWeather}}` `{{dayAfterWeather}}` | Sunny, 59° |
 
 A code that's misspelled is left exactly as typed, so you can spot the mistake.
@@ -144,11 +145,20 @@ A code that's misspelled is left exactly as typed, so you can spot the mistake.
 - **Weather, live:** the temperature now, a short forecast, tonight, and the next two days.
 - **Tide table, live:** today's high and low tides with heights. The next tide is in bold.
 
+**Whose date and weather?** Each reader's own, wherever they are:
+
+- **Date and day names:** from the reader's own device clock and time zone.
+- **Their town:** looked up from their internet connection, city level, with no permission asked (e.g. "Gurugram"). Sunrise, sunset, the moon and the weather are for that town.
+- **Exact location:** the weather box has a **Use my exact location** button. Only if a reader taps it does the browser ask to share their location. Coordinates are rounded to about 1 km first.
+- **If the lookup fails,** the paper uses its own town and says so ("Forecast for Harrow Bay").
+- **Tides belong to the paper's harbour:** the tide table and `{{highWater}}` are in the harbour's own time, labelled with its time zone (e.g. "8:00 a.m. EDT") when the reader is somewhere else.
+
 **Where the numbers come from**
 
-- **Date, sunrise, sunset and the moon** are calculated on the reader's own device, instantly.
-- **Weather** comes from the US National Weather Service. For places outside the US it comes from Open-Meteo, which is free for non-commercial use only; a commercial paper needs their paid plan.
-- **Tides** come from NOAA's official tide predictions.
+- **Sunrise, sunset and the moon** are calculated on the reader's own device, instantly.
+- **Weather** comes from the US National Weather Service for readers in the US, and from Open-Meteo elsewhere. Open-Meteo is free for non-commercial use only; a commercial paper needs their paid plan.
+- **The reader's town** comes from BigDataCloud's free lookup.
+- **Tides** come from NOAA's official predictions for the paper's station.
 
 **How it keeps up**
 
@@ -158,9 +168,10 @@ A code that's misspelled is left exactly as typed, so you can spot the mistake.
 - **Caching:** results are kept in the reader's browser, so a returning reader sees them instantly. The free services get at most one request per reader every half hour.
 - **If a service is down,** that value shows a dash (—) and the rest of the paper works normally.
 
-**Set the location** on the newsroom's **Edition** tab: latitude, longitude,
-time zone, NOAA tide station number, and °F or °C. The paper updates as you type.
-The sample paper uses Rockland, Maine (tide station 8415490).
+**Set the paper's own town** on the newsroom's **Edition** tab: latitude,
+longitude, time zone, NOAA tide station and °F or °C. It's used for the tide
+table and as the fallback when a reader's location can't be found. The sample
+paper uses Rockland, Maine (tide station 8415490).
 
 ---
 
@@ -407,7 +418,8 @@ drafts stay in their browsers.
 
 - **No reader cookies:** readers get no accounts and no tracking. The only cookie is the editor's sign-in cookie.
 - **Puzzle progress and cached data** are kept only in the reader's own browser.
-- **Outside services:** readers' browsers connect directly to NOAA (tides), the US National Weather Service or Open-Meteo (weather), and Google Fonts (typefaces). Those services see the reader's IP address, as they would for any website using them.
+- **Outside services:** readers' browsers connect directly to NOAA (tides), the US National Weather Service or Open-Meteo (weather), BigDataCloud (to find the reader's town from their connection), and Google Fonts (typefaces). Those services see the reader's IP address, as they would for any website using them.
+- **Location:** the paper never asks for a reader's location by itself. Only the **Use my exact location** button does, and the coordinates are rounded to about 1 km before being sent to the weather and town-name services. The reader's town is remembered only in their own browser.
 
 ---
 

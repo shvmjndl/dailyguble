@@ -468,3 +468,10 @@ body.editing .reader-sheet{user-select:text}
 @media (max-width:980px){ .brandmark{display:none} }
 .reader-end{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;font:italic 17px/1.4 var(--f-head);color:#cbbfa6;padding:16px 12px 6px}
 .reader-end svg{width:58px;height:58px;display:block}
+
+/* "Use my exact location", under the weather */
+.wx-locate{margin-top:5px;font:600 9.5px/1 var(--f-util);color:var(--press-red);background:none;border:1px solid var(--press-red);border-radius:2px;padding:4px 6px;cursor:pointer}
+.wx-locate:hover{background:color-mix(in srgb, var(--press-red) 10%, transparent)}
+.wx-locate[disabled]{opacity:.6;cursor:default}
+.reader-sheet .wx-locate{display:none}
+.ear-weather .ear-label{max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

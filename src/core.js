@@ -187,7 +187,7 @@ var LIVE_TOKENS = [
   ['highWater', 'Next high tide'], ['lowWater', 'Next low tide'], ['moon', 'Moon phase'], ['moonLit', 'Moon, percent lit'],
   ['temp', 'Temperature now'], ['conditions', 'Sky right now'], ['forecast', 'Short forecast'],
   ['high', 'Today’s high'], ['low', 'Tonight’s low'], ['tonight', 'Tonight'],
-  ['tomorrowWeather', 'Tomorrow’s weather'], ['dayAfterWeather', 'The day after']
+  ['tomorrowWeather', 'Tomorrow’s weather'], ['dayAfterWeather', 'The day after'], ['weatherPlace', 'Where the weather is for']
 ];
 var TOKEN_RE = /\{\{\s*(\w+)\s*\}\}/g;
 function liveTZ(){ return (ALMANAC && ALMANAC.timeZone) || 'America/New_York'; }
@@ -203,12 +203,21 @@ function clock(iso){
   return new Date(iso).toLocaleTimeString('en-US', { timeZone: liveTZ(), hour: 'numeric', minute: '2-digit' })
     .replace(/[\s ]*AM$/i, ' a.m.').replace(/[\s ]*PM$/i, ' p.m.');
 }
+function tideTZ(){ return (ALMANAC && ALMANAC.tideTimeZone) || liveTZ(); }
+function tideKey(iso){ return new Date(iso).toLocaleDateString('en-CA', { timeZone: tideTZ() }); }
+function tideToday(){ return new Date().toLocaleDateString('en-CA', { timeZone: tideTZ() }); }
+function tideClock(iso, withZone){
+  if (!iso) return '—';
+  var o = { timeZone: tideTZ(), hour: 'numeric', minute: '2-digit' };
+  if (withZone && tideTZ() !== liveTZ()) o.timeZoneName = 'short';
+  return new Date(iso).toLocaleTimeString('en-US', o).replace(/[\s\u202f]*AM/i, ' a.m.').replace(/[\s\u202f]*PM/i, ' p.m.');
+}
 function dayName(t, offset){ return new Date(Date.UTC(t.y, t.m - 1, t.d + offset, 12)).toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'long' }); }
 function liveValues(){
   var t = todayParts(), noon = new Date(Date.UTC(t.y, t.m - 1, t.d, 12)), A = ALMANAC || {}, now = Date.now(), today = ymdKey(t);
   function next(type){
     var x = (A.tides || []).filter(function(e){ return e.type === type && Date.parse(e.time) > now; })[0];
-    return x ? clock(x.time) + (localKey(x.time) === today ? '' : ' tomorrow') : '—';
+    return x ? tideClock(x.time, true) + (tideKey(x.time) === tideToday() ? '' : ' tomorrow') : '—';
   }
   var mins = A.sunrise && A.sunset ? Math.round((Date.parse(A.sunset) - Date.parse(A.sunrise)) / 60000) : null;
   var month = noon.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long' });
@@ -220,6 +229,7 @@ function liveValues(){
     daylight: mins == null ? '—' : Math.floor(mins / 60) + ' hr ' + (mins % 60) + ' min',
     highWater: next('high'), lowWater: next('low'),
     moon: A.moon ? A.moon.phase : '—', moonLit: A.moon ? A.moon.illumination + '%' : '—',
+    weatherPlace: A.placeName || '—',
     temp: wx(function(W){ return W.current.temp + '°'; }),
     conditions: wx(function(W){ return W.current.text; }),
     forecast: wx(function(W){ return W.forecast; }),
@@ -416,8 +426,8 @@ var BLOCKS = {
   tides: function(b){
     var A = ALMANAC || {}, wrap = el('div', 'tides');
     if (!A.tideStation) { wrap.appendChild(txt('p', 'tide-note', 'No tide station is set for this paper.')); return wrap; }
-    var today = ymdKey(todayParts()), now = Date.now(), nextDone = false;
-    var list = (A.tides || []).filter(function(x){ return localKey(x.time) === today; });
+    var today = tideToday(), now = Date.now(), nextDone = false;
+    var list = (A.tides || []).filter(function(x){ return tideKey(x.time) === today; });
     if (!list.length) { wrap.appendChild(txt('p', 'tide-note', A.tideError || 'No tide predictions for today yet.')); return wrap; }
     var t = el('table'), head = el('tr');
     ['', 'Time', 'Feet'].forEach(function(h, i){ head.appendChild(el('th', i ? 'r' : null, h || '&nbsp;')); });
@@ -426,12 +436,13 @@ var BLOCKS = {
       var tr = el('tr');
       if (!nextDone && Date.parse(x.time) > now) { tr.className = 'next'; nextDone = true; }
       tr.appendChild(txt('td', null, x.type === 'high' ? 'High' : 'Low'));
-      tr.appendChild(txt('td', 'r', clock(x.time)));
+      tr.appendChild(txt('td', 'r', tideClock(x.time)));
       tr.appendChild(txt('td', 'r', x.feet.toFixed(1)));
       t.appendChild(tr);
     });
     wrap.appendChild(t);
-    wrap.appendChild(txt('p', 'tide-note', 'NOAA predictions, station ' + A.tideStation + '. The next tide is in bold.'));
+    var zone = new Date().toLocaleTimeString('en-US', { timeZone: tideTZ(), timeZoneName: 'short' }).split(' ').pop();
+    wrap.appendChild(txt('p', 'tide-note', 'NOAA predictions, station ' + A.tideStation + ', in harbour time (' + zone + '). The next tide is in bold.'));
     return wrap;
   },
   weather: function(b){
@@ -446,7 +457,21 @@ var BLOCKS = {
     if (W.tonight) row('Tonight', W.tonight.text + ', ' + W.tonight.temp + '°');
     [1, 2].forEach(function(o){ var d = dayWx(W, o); if (d.text) row(dayName(t, o), dayLine(d)); });
     wrap.appendChild(rows);
-    wrap.appendChild(txt('p', 'tide-note', 'Forecast: ' + W.source + '. Temperatures in °' + (A.units || 'F') + '.'));
+    var note = txt('p', 'tide-note', 'Forecast for ' + (A.placeName || 'here') + (A.placeSource === 'connection' ? ' (from your connection)' : '') +
+      ': ' + W.source + '. Temperatures in °' + (A.units || 'F') + '.');
+    wrap.appendChild(note);
+    if (A.placeSource !== 'device' && navigator.geolocation) {
+      var btn = txt('button', 'wx-locate', 'Use my exact location'); btn.type = 'button';
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        btn.disabled = true; btn.textContent = 'Finding you…';
+        useExactLocation(function(changed, why){
+          if (changed) { loadAlmanac(hooks.issue ? hooks.issue() : null, liveUpdated); refreshLive(); }
+          else { btn.disabled = false; btn.textContent = 'Use my exact location'; if (why) note.textContent = why; }
+        });
+      });
+      wrap.appendChild(btn);
+    }
     return wrap;
   },
   crossword:  function(b){ return Crossword(b); },
@@ -485,7 +510,7 @@ function renderPage(page, i, N, m){
       '<div class="nameplate">' +
         '<div class="ear ear-brand">' + BRAND_BADGE + '</div>' +
         '<h1>' + (m.name || '') + '</h1>' +
-        '<div class="ear ear-weather"><span class="ear-label">Weather</span><b>{{temp}}</b><span>{{conditions}}</span></div>' +
+        '<div class="ear ear-weather"><span class="ear-label">{{weatherPlace}}</span><b>{{temp}}</b><span>{{conditions}}</span></div>' +
       '</div>' +
       (m.motto ? '<div class="motto">' + m.motto + '</div>' : '') +
       '<div class="dateline"><span>' + (m.date || '') + '</span><span>' + (m.meta || '') + '</span><span>' + (m.pages || '') + '</span></div>'));
@@ -1450,7 +1475,7 @@ function wireView(){
   book.addEventListener('click', function(e){
     if (isEditing() || stage.__justDragged) return;
     var c = e.target.closest('.corner'); if (c) { go(parseInt(c.dataset.nav, 10)); return; }
-    if (e.target.closest('[data-pz]')) return;
+    if (e.target.closest('[data-pz], .wx-locate')) return;
     var now = Date.now(), x = e.clientX, y = e.clientY;
     clearTimeout(tapTimer);
     if (lastTap && now - lastTap.t < 320 && Math.hypot(x - lastTap.x, y - lastTap.y) < 40) { lastTap = null; zoomAt(x, y); return; }
