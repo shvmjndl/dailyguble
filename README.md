@@ -322,7 +322,7 @@ A code that's misspelled is left exactly as typed, so you can spot the mistake.
 - **Date and day names:** from the reader's own device clock and time zone.
 - **Their town:** looked up from their internet connection, city level, with no permission asked (e.g. "Gurugram"). Sunrise, sunset, the moon and the weather are for that town.
 - **Exact location:** the weather box has a **Use my exact location** button. Only if a reader taps it does the browser ask to share their location. Coordinates are rounded to about 1 km first.
-- **If the lookup fails,** the paper uses its own town and says so ("Forecast for Harrow Bay").
+- **If the lookup fails,** the paper uses its own town and says so ("Forecast for Rockland").
 - **Tides belong to the paper's harbour:** the tide table and `{{highWater}}` are in the harbour's own time, labelled with its time zone (e.g. "8:00 a.m. EDT") when the reader is somewhere else.
 
 **Where the numbers come from**
