@@ -8,14 +8,19 @@
 <p align="center"><b>The Daily Guble</b>: a newspaper you read like paper.<br>
 <a href="https://dailyguble.pages.dev">dailyguble.pages.dev</a></p>
 
-<p align="center"><img src="brand/screenshot-front.jpg" alt="The front page of The Daily Guble, with the lighthouse badge and a live weather ear in the masthead" width="900"></p>
+<p align="center"><img src="brand/screenshot-front.jpg" alt="The front page of The Daily Guble: the hour's world news, merged from several outlets, with the lighthouse badge and the reader's own weather in the masthead" width="900"></p>
 
 # The Daily Guble
 
 A newspaper website that looks and feels like a real paper, with the world's news
 in it, refreshed every hour. Readers turn the pages by dragging them, fold the paper
-in half, zoom in, read any story in large type, and play a new mini crossword, word game and sudoku every day
-right on the page. The date, sunrise and weather are each reader's own.
+in half (and flip it to read the bottom half), zoom in, read any story in large type,
+and play a new mini crossword, word game and sudoku every day right on the page.
+They can dog-ear the pages they like so those come first, and after sunset the paper
+turns to dark newsprint. The date, sunrise and weather are each reader's own.
+
+Everything is plain rules, with no AI, and it runs free: the news is gathered by a
+small Cloudflare function and the paper is put together in each reader's own browser.
 
 Editors sign in with a password and change everything from the browser: stories,
 photos, pages, columns, games and the look of the paper. One click publishes the
@@ -26,6 +31,7 @@ new edition, and it can go out to free web hosting.
 - [Quick start](#quick-start)
 - [For readers](#for-readers)
 - [The news](#the-news)
+- [Speed](#speed)
 - [Live dates, sun, tides and weather](#live-dates-sun-tides-and-weather)
 - [For editors: the newsroom](#for-editors-the-newsroom)
 - [Publishing the public website for free](#publishing-the-public-website-for-free)
@@ -69,6 +75,8 @@ new edition, and it can go out to free web hosting.
 | Back to the whole page | **Fit** button, or the 0 key |
 | Fold the paper in half | **Fold** button, or the F key. The paper shows the top half, with a crease, like a paper on a newsstand. |
 | Read the bottom half | Press the button again (**See the bottom half**) or tap the fold edge: the paper flips over. Tap the edge to flip back; **Open the paper** unfolds it. Turning the page opens the next one at its top. |
+| Mark a page you like | Tap its top-right corner. It gets a dog-ear (or your chosen mark) and moves up to just after the front page. Tap again to take it off. |
+| Dark or light paper | **☾ Paper** button: **Auto** (dark after sunset), **Dark** or **Day**, plus the choice of mark. |
 
 A short tip appears on a reader's first visit explaining tapping and double-tapping.
 
@@ -77,7 +85,9 @@ A short tip appears on a reader's first visit explaining tapping and double-tapp
 - **Open a story:** tap or click it. It opens on a clean sheet of newsprint in large, easy-to-read type, with its headline, photo and byline.
 - **Move between stories:** swipe left or right, use the arrow buttons, press ← →, or tap **Next story** at the bottom. This goes story by story through the whole paper.
 - **Close the story:** press Esc or ×.
-- **Without tapping:** the red **Read** button opens the first story on the current page.
+- **Without tapping:** the red **Read** button opens the current page's lead story.
+- **Reading order:** on a news page, stories come most important first, whatever column they sit in.
+- **Links:** each news story ends with **Read the full story at …**, which opens the outlet's own page in a new tab.
 
 ### Puzzles
 
@@ -98,12 +108,16 @@ from these sources:
 - **The clues:** they come from Wiktionary, the free dictionary, using each word's
   main meaning. A clue never contains the answer, and senses marked slang or
   crude are skipped. Up to two clues are a sentence from today's Wikipedia
-  with the word blanked out.
+  with the word blanked out. Clues are fetched through the paper's own site
+  (`/api/clues`), which keeps each word's clue for a month, so Wiktionary is asked
+  about a word once rather than once per reader.
 - **The word game:** after you finish, it links to the Wikipedia article the word came from.
 - **The sudoku:** it gets harder through the week, Gentle on Monday and Tough by Saturday.
   `{{sudokuLevel}}` prints today's level.
 - **Making them:** each takes a few milliseconds. The word list (`/words.txt`, about 45 KB)
-  loads only when the puzzles page is drawn.
+  and Wikipedia's front page download only when the puzzles page is opened, or a few
+  seconds after the news has arrived, so they never slow down the first page. Each day's
+  mini is made once and kept, even when the paper redraws.
 - **Word lists and notices:** see [docs/word-lists.md](docs/word-lists.md).
 
 In the newsroom, tick **A new … every day** on a crossword or sudoku. Use the
@@ -158,8 +172,10 @@ Your choices, and your marks, are kept in your own browser until you change them
 ### Phones and tablets
 
 - **Devices:** works on iPhone, Android phones and iPad, held upright or sideways.
-- **Toolbar:** one compact row with buttons big enough to tap easily. Space is kept clear for the notch and home bar.
-- **Puzzles:** when the on-screen keyboard opens over a crossword, the grid moves up so the square you're typing in stays visible.
+- **Toolbar:** one compact row with buttons big enough to tap easily, down to 360-pixel-wide phones. Space is kept clear for the notch and home bar.
+- **Puzzles:** tapping a puzzle zooms in to it. The word game zooms out far enough to show its whole keyboard, and when the on-screen keyboard opens over a crossword, the grid moves up so the square you're typing in stays visible.
+- **Marking pages:** the corner you tap to dog-ear a page has a finger-sized target, even though the page is shown small.
+- **Folding:** the fold is animated with movements phones handle cheaply (a clip and a slide, never a change of size), so it stays smooth.
 - **No accidents:** pull-to-refresh and the browser's own page zoom are switched off on the paper, so they can't fire by mistake.
 - **Install it:** use your browser's **Add to Home Screen** to install the paper like an app, with its own icon. It opens full screen.
 
@@ -199,8 +215,11 @@ The Daily Guble is personal and non-commercial.
    - Words match as whole words, so place names like Scunthorpe never trip it.
 3. **The same event from several outlets becomes one story:** two headlines are about
    the same event when they share most of their important words. "Tamil Nadu" counts as one word.
-   A story joins an event only when it matches most of that event's reports,
-   so the physics Nobel and the medicine Nobel stay apart.
+   Headlines that share only two words still count when their summaries overlap enough
+   and they share a word that's rare in the day's news, like a name ("physics", "Nobel"
+   and "Halzen"). A story joins an event only when it matches most of that event's reports,
+   so the physics Nobel and the medicine Nobel stay apart. The rules were tuned on a full
+   day of real feeds, checking every merge by hand.
 4. **Ranking:** more outlets on a story means bigger news. A story loses one outlet's
    worth of weight every six hours.
 5. **Placing:** the front page takes the biggest stories, and every other page takes its own
@@ -217,7 +236,8 @@ The Daily Guble is personal and non-commercial.
   cache for the hour. Each request stays small, well inside the free plan's limits.
 - **When the hour turns:** the last hour's copy is served straight away while a fresh one is built.
 - **In the reader's browser:** the parts are combined, the stories ranked and the pages laid out.
-  The result is saved in the browser, so the paper opens instantly, even offline.
+  The page asks for the news in its own HTML, so it downloads alongside the paper's script
+  instead of after it. The result is saved in the browser, so the paper opens instantly, even offline.
 - **No jumping:** new news never moves the page while someone is reading, zoomed in or mid-puzzle.
   It waits until they're done.
 - **In the newsroom:** `server.js` serves the same `/api/news` itself, so the preview matches the site.
@@ -247,6 +267,24 @@ The **Pages** tab can add any of the news pages (`News: world` and so on) next t
 
 ---
 
+## Speed
+
+Measured on the live site with a simulated mid-range phone: processor slowed four
+times, on a slow 4G connection.
+
+| | First visit | Coming back |
+|---|---|---|
+| First story on screen | about 1.5 s | about 0.3 s |
+| Longest moment the phone is busy | about 130 ms | about 90 ms |
+| Downloaded | about 530 KB, mostly typefaces | about 1 KB |
+| Page turns | no dropped frames | no dropped frames |
+| Layout shift while loading | none worth noting | none |
+
+Coming back is fast because the paper keeps the hour's news, the weather and the
+puzzles in the browser, and only checks for news once the hour has turned.
+
+---
+
 ## Live dates, sun, tides and weather
 
 Type any of these codes into any text in the paper: a headline, a story, a table,
@@ -268,6 +306,7 @@ the nameplate. Readers see today's real value instead of the code.
 | `{{forecast}}` | Mostly Sunny. High 64°. Wind W 15 mph. |
 | `{{tonight}}` | Mostly Clear, 42° |
 | `{{updated}}` | When the news was last updated, e.g. 5:00 p.m. |
+| `{{sudokuLevel}}` | How hard today's sudoku is: Gentle, Moderate or Tough |
 | `{{weatherPlace}}` | where the weather is for, e.g. Gurugram |
 | `{{tomorrowWeather}}` `{{dayAfterWeather}}` | Sunny, 59° |
 
@@ -291,11 +330,12 @@ A code that's misspelled is left exactly as typed, so you can spot the mistake.
 - **Sunrise, sunset and the moon** are calculated on the reader's own device, instantly.
 - **Weather** comes from the US National Weather Service for readers in the US, and from Open-Meteo elsewhere. Open-Meteo is free for non-commercial use only; a commercial paper needs their paid plan.
 - **The reader's town** comes from BigDataCloud's free lookup.
-- **Tides** come from NOAA's official predictions for the paper's station.
+- **Tides** come from NOAA's official predictions for the paper's station. They're only fetched when the edition actually prints a tide table or a tide code.
+- **The paper's own town** is only asked for weather when a reader's town can't be found.
 
 **How it keeps up**
 
-- **The date** changes at midnight in the paper's own time zone, even on a page that stays open.
+- **The date** changes at midnight in the reader's own time zone, even on a page that stays open. The daily puzzles change with it.
 - **The next tide** moves on after each tide.
 - **Weather** refreshes every 30 minutes.
 - **Caching:** results are kept in the reader's browser, so a returning reader sees them instantly. The free services get at most one request per reader every half hour.
@@ -333,7 +373,8 @@ paper, which works as a live preview: every change shows up as you make it.
 **Pages**
 - **Arrange:** add, reorder, duplicate or delete pages.
 - **New pages** start from a template:
-  - Three columns of news
+  - News pages that fill themselves every hour: front page, world, India, business, science / tech / health, opinion & analysis, sport & culture
+  - Three columns of news (written by hand)
   - Feature with a sidebar
   - Opinion and letters
   - Puzzles and games
@@ -369,7 +410,7 @@ paper, which works as a live preview: every change shows up as you make it.
 | Pictures | Photo · Cartoon · Comic strip |
 | Boxes and lists | Box (can hold other blocks) · List with titles · Table · Label and value rows · Scoreboard · Big number · Weather, live · Tide table, live |
 | Features | Advertisement · Letters to the editor · Death notices · Classified ads |
-| Games | Crossword · Sudoku · Word search |
+| Games | Crossword (tick **A new 5×5 mini every day** for the daily one) · Sudoku (tick **A new puzzle every day**) · Word game (daily) · Word search |
 | Advanced | Custom HTML |
 
 **Photos:** upload your own (any JPEG or PNG), or use a built-in drawing.
@@ -408,10 +449,15 @@ paper, which works as a live preview: every change shows up as you make it.
 
 ## Publishing the public website for free
 
-The public paper doesn't need a server. On every publish, the newsroom builds it
-as about 250 KB of plain files: the page with today's edition inside, the script,
-the styles and the icons. Readers' own browsers do all the live work, so any free
-static host can serve these files.
+The public paper doesn't need a server of your own. On every publish, the newsroom
+builds it as plain files, about 400 KB (around 110 KB as sent, compressed): the page
+with today's edition inside, the script, the styles, the icons and the puzzles' word
+list. Readers' own browsers do the live work.
+
+**The news and the crossword clues need Cloudflare Pages.** They come from two small
+Cloudflare Pages Functions in the `functions/` folder, which Cloudflare runs for free
+alongside the files. Netlify, Vercel or GitHub Pages can serve the paper, but it will
+show "The news is on its way…" because they don't run those functions.
 
 **Setting it up (once):**
 
@@ -430,7 +476,7 @@ so don't edit it by hand.
    SITE_URL=https://dailyguble.pages.dev
    ```
 4. **Connect a free host to the repository's `site/` folder.** Pick one:
-   - **Cloudflare Pages:** create a project from the repository. Set the production branch to **`main`**, framework **None**, no build command, and build output directory **`site`**. Unlimited traffic on the free plan.
+   - **Cloudflare Pages (recommended, needed for the news):** create a project from the repository. Set the production branch to **`main`**, framework **None**, no build command, and build output directory **`site`**. Leave the root directory as the top of the repository, so Cloudflare finds the `functions/` folder. Unlimited traffic on the free plan.
    - **Netlify:** import the repository, with no build command and publish directory **`site`**.
    - **Vercel:** import the repository, framework **Other**, no build command, output directory **`site`**. The free plan is non-commercial only.
    - **GitHub Pages:** GitHub Pages can only serve the top of a branch or a `docs/` folder. Set `GITHUB_DIR=docs` and choose that folder in Settings → Pages.
@@ -550,7 +596,8 @@ drafts stay in their browsers.
 ## Privacy
 
 - **No reader cookies:** readers get no accounts and no tracking. The only cookie is the editor's sign-in cookie.
-- **Puzzle progress and cached data** are kept only in the reader's own browser.
+- **Kept only in the reader's own browser:** puzzle progress, the pages they've marked, their mark style and dark or day choice, and cached news, weather and puzzles. None of it is sent anywhere.
+- **Crossword clues** are fetched through the paper's own site, so readers' browsers never contact Wiktionary.
 - **Outside services:** readers' browsers connect directly to Wikipedia (the day's front page, for the puzzles), NOAA (tides), the US National Weather Service or Open-Meteo (weather), BigDataCloud (to find the reader's town from their connection), and Google Fonts (typefaces). Those services see the reader's IP address, as they would for any website using them.
 - **The news:** readers' browsers fetch it from the paper's own site (`/api/news`), never from the outlets. Only the Cloudflare function contacts the news sites. A reader's browser connects to an outlet only when the reader opens one of its links.
 - **Location:** the paper never asks for a reader's location by itself. Only the **Use my exact location** button does, and the coordinates are rounded to about 1 km before being sent to the weather and town-name services. The reader's town is remembered only in their own browser.
@@ -593,6 +640,11 @@ The **Edition** tab can also download the current edition as a file and load one
   - **Connection:** check the computer is online.
   - **The service may be down:** the paper fills the values in when it's back.
   - **No tides:** check the 7-digit NOAA station number on the Edition tab.
+- **The paper says "The news is on its way…" and never fills in**
+  - **The host:** the news comes from Cloudflare Pages Functions. Other hosts serve the page but not the news. See [Publishing](#publishing-the-public-website-for-free).
+  - **Root directory:** in Cloudflare Pages, the root directory must be the top of the repository so the `functions/` folder is found.
+  - **Locally:** `run.sh` serves the news itself. It needs an internet connection to reach the feeds.
+- **The daily crossword says it needs a connection.** The mini is made from Wikipedia's front page and Wiktionary clues, so the first visit each day must be online. After that it works offline.
 - **The public website didn't update.** The Edition tab shows the reason. Usually:
   - **Permissions:** the token needs "Contents: Read and write".
   - **Empty repository:** add a README to it first.
@@ -627,7 +679,7 @@ Every file in [`brand/`](brand/README.md) is a vector outline (no fonts needed),
 
 - **`server.js`** is the newsroom server. It handles the sign-in page and sessions, serves the editor to signed-in editors, saves editions and history, and publishes the website. It also serves a preview of the paper at `/`.
 - **`publish.js`** builds the public website files and pushes only the changed ones to GitHub.
-- **Browser code:** the server wraps the files in `src/` into two script bundles. `paper.js` is for readers (`themes.js` + `brand.js` + the news engine's combining step + `core.js` + `news.js` + `almanac.js` + `reader.js`). The editor's bundle swaps `reader.js` for `editor.js`. The server also reads `themes.js` itself, to put the right fonts in each page's head.
+- **Browser code:** the server wraps the files in `src/` into two script bundles. `paper.js` is for readers (`themes.js` + `brand.js` + the browser parts of the engine + `core.js` + `news.js` + `daily.js` + `clips.js` + `almanac.js` + `reader.js`). The editor's bundle swaps `reader.js` for `editor.js`. The server also reads `themes.js` itself, to put the right fonts in each page's head.
 - **`engine/`** is the news engine, plain JavaScript modules with no dependencies. The same files run on Cloudflare (in `functions/`), in the newsroom server and, for the combining step, in readers' browsers. Run its checks with `node engine/test.js`.
 
 ### Project layout
@@ -641,6 +693,7 @@ src/core.js             the paper: rendering, page curl, zoom, fold, story reade
 src/almanac.js          date, sun and moon maths; fetches tides (NOAA) and weather (NWS / Open-Meteo)
 src/reader.js           starts the reader's bundle
 src/news.js             the news pages: loads the hour's news, lays out and fits the columns
+src/clips.js            marking pages (dog-ear and the other marks), the Paper menu, the night edition
 src/editor.js           the newsroom editor (signed-in editors only)
 engine/sources.js       the news feeds, and the sections and regions they fill
 engine/parse.js         reads RSS and Atom feeds
@@ -709,19 +762,27 @@ want to look at it.
 
 ### Performance
 
+See also [Speed](#speed) for measured numbers.
+
 - **Drawing:**
-  - Only the current page and its neighbours are drawn.
+  - The page being read is drawn first. The others follow in order, one per background step, so a phone never freezes for long. A page you turn to early is drawn on the spot.
   - Pages are boxed off with CSS containment, so a change inside one page never makes the browser re-check the others.
   - No blend modes or 3D are used. Phones skip the blurred shadow under a turning page.
+  - Folding uses a clip and a slide, never a change of size, so the browser doesn't re-lay out the page on every frame.
+  - A page turn finishes at once if the tab is hidden (browsers pause animation there).
 - **Live data:** new weather, tides or a new day update only the words and live blocks that change, never a full redraw.
 - **Loading:**
   - Fonts are linked in the page's head, so they start downloading right away.
+  - The page preloads the hour's news (at low priority, so the script comes first).
+  - Puzzle downloads wait until the puzzles page is opened or the news is in.
   - Uploaded photos are published as separate files named after their content.
   - The script and styles are cached for a year (a new version gets a new address).
-  - The newsroom server sends everything gzip-compressed. Cloudflare compresses the public site itself.
+  - The newsroom server sends everything compressed. Cloudflare compresses the public site itself.
 
 ### Limits
 
 - **Page size:** each page is a fixed 800 × 1120 layout, scaled to fit the screen.
 - **Edition size:** 1 to 64 pages and up to 25 MB, which leaves room for embedded photos.
 - **One editor account,** shared by everyone who edits.
+- **The news needs Cloudflare Pages** for the public site (or the newsroom server running locally). Each hour's news comes from 42 public feeds; if one is down, the rest still fill the paper.
+- **Reader choices are per browser:** marked pages, the mark style and dark or day are kept on that device only, so they don't follow a reader to another phone.
