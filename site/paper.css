@@ -622,6 +622,9 @@ html.night .stack i:nth-child(1){background:color-mix(in srgb, var(--paper) 85%,
 html.night .stack i:nth-child(2){background:color-mix(in srgb, var(--paper) 70%, #000)}
 html.night .reader-sheet{box-shadow:0 18px 50px rgba(0,0,0,.7),inset 0 0 90px rgba(0,0,0,.35)}
 html.night .wd-cell.hit,html.night .wd-key.hit{color:#1c1a16}
+/* black squares stay black at night (ink turns light then) */
+html.night .cw-cell.blk{background:#0e0c0a}
+html.night .cw-grid{background:#6d6455;border-color:#6d6455}
 html.night .ear-weather,html.night .nameplate h1{color:var(--ink)}
 .paper,.reader-sheet,.stack i{transition:background-color .6s ease,color .6s ease}
 
