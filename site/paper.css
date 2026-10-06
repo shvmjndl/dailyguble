@@ -64,6 +64,12 @@ body{
 .folded-edge{position:absolute;left:0;right:0;top:566px;height:14px;z-index:9;display:none;
   background:linear-gradient(to bottom,#cfc7b2,#b4aa91 55%,#8e8471);box-shadow:0 10px 22px rgba(0,0,0,.5)}
 .folded .folded-edge{display:block}
+.folded .folded-edge{cursor:pointer}
+/* the bottom half: the sheet slides up inside the folded frame; the fold is now at the top */
+.book.folded-bottom .sheet{top:-554px}
+.book.folding .sheet{transition:top .5s cubic-bezier(.3,.8,.2,1)}
+.folded-bottom .folded-edge{top:554px;background:linear-gradient(to top,#cfc7b2,#b4aa91 55%,#8e8471);box-shadow:0 -10px 22px rgba(0,0,0,.5)}
+.folded-bottom .crease{opacity:0}
 .corner{position:absolute;width:132px;height:132px;bottom:0;z-index:8;border:0;background:none;padding:0;cursor:pointer}
 .corner.next{right:0}
 .corner.prev{left:0}

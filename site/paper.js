@@ -1915,7 +1915,7 @@ var SHELL =
     '<input id="pzInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Puzzle answer input">' +
     '<div class="grp"><button class="ctl" id="foldBtn" aria-pressed="false"><span class="long">Fold in half</span><span class="short">Fold</span></button></div>' +
     '<p class="hint"><kbd>&#8592;</kbd> <kbd>&#8594;</kbd> turn pages &nbsp;&middot;&nbsp; <kbd>+</kbd> <kbd>&#8722;</kbd> zoom &nbsp;&middot;&nbsp; ' +
-    '<kbd>0</kbd> fit &nbsp;&middot;&nbsp; <kbd>F</kbd> fold &nbsp;&middot;&nbsp; click a story to read it &nbsp;&middot;&nbsp; drag a page to turn it, double-click a column to zoom</p>' +
+    '<kbd>0</kbd> fit &nbsp;&middot;&nbsp; <kbd>F</kbd> fold / flip &nbsp;&middot;&nbsp; click a story to read it &nbsp;&middot;&nbsp; drag a page to turn it, double-click a column to zoom</p>' +
   '</div>' +
   '<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>' +
   '<div class="reader" id="reader" role="dialog" aria-modal="true" aria-labelledby="rdWhere" hidden>' +
@@ -2027,6 +2027,7 @@ function go(step){
   var t = Math.min(N - 1, Math.max(0, idx + step));
   if (t === idx) return;
   ensureBuilt(t);
+  if (folded && foldSide === 'bottom') setFold(true, 'top');
   PZ.release();
   if (Math.abs(t - idx) === 1 && animateTurn(t - idx)) return;
   finishCurl();
@@ -2038,13 +2039,19 @@ function setZoom(z, keepPan){
   if (!keepPan && zoom <= 1.02) { panX = 0; panY = 0; }
   apply();
 }
-function setFold(on){
-  folded = on;
+/* Folded, the paper shows one half at a time: the top, or (flipped over) the bottom. */
+var foldSide = 'top';
+function setFold(on, side){
+  folded = on; foldSide = on && side === 'bottom' ? 'bottom' : 'top';
   foldBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-  foldBtn.innerHTML = on ? '<span class="long">Open the paper</span><span class="short">Open</span>' : '<span class="long">Fold in half</span><span class="short">Fold</span>';
-  book.classList.add('folding'); book.classList.toggle('folded', on);
+  foldBtn.innerHTML = !on ? '<span class="long">Fold in half</span><span class="short">Fold</span>'
+    : foldSide === 'top' ? '<span class="long">See the bottom half</span><span class="short">Bottom</span>'
+    : '<span class="long">Open the paper</span><span class="short">Open</span>';
+  book.classList.add('folding'); book.classList.toggle('folded', on); book.classList.toggle('folded-bottom', foldSide === 'bottom');
   panX = 0; panY = 0; measure();
 }
+/* The Fold button and the F key: fold (top half) → the bottom half → open again. */
+function cycleFold(){ if (!folded) setFold(true, 'top'); else if (foldSide === 'top') setFold(true, 'bottom'); else setFold(false); }
 function focusOn(node){
   var s = fit * zoom, face = sheets[idx] && sheets[idx].firstChild; if (!face) return;
   var nr = node.getBoundingClientRect(), fr = face.getBoundingClientRect();
@@ -2225,12 +2232,13 @@ function wireView(){
   document.getElementById('zoomIn').addEventListener('click', function(){ glide(); setZoom(zoom * 1.25, true); });
   document.getElementById('zoomOut').addEventListener('click', function(){ glide(); setZoom(zoom / 1.25, false); });
   document.getElementById('fitBtn').addEventListener('click', function(){ PZ.release(); glide(); setZoom(1, false); });
-  foldBtn.addEventListener('click', function(){ setFold(!folded); });
+  foldBtn.addEventListener('click', cycleFold);
   var tapTimer = null, lastTap = null;
   book.addEventListener('click', function(e){
     if (isEditing() || stage.__justDragged) return;
     var c = e.target.closest('.corner'); if (c) { go(parseInt(c.dataset.nav, 10)); return; }
     var pc = e.target.closest('.page-clip'); if (pc) { togglePageClip(pc); return; }
+    if (e.target.closest('.folded-edge')) { setFold(true, foldSide === 'top' ? 'bottom' : 'top'); return; }
     if (e.target.closest('[data-pz], .wx-locate')) return;
     var gt = e.target.closest('[data-goto]');
     if (gt && zoom <= 1.02) { goTo(parseInt(gt.dataset.goto, 10)); return; }
@@ -2278,6 +2286,7 @@ function wireView(){
   /* Grab the page anywhere: the nearest corner (top or bottom) does the turning. */
   function beginTurn(dx){
     finishCurl();
+    if (folded && foldSide === 'bottom') { g.mode = 'none'; go(dx < 0 ? 1 : -1); return; }   // from the bottom half: the next page opens at its top
     var start = pageCoords(g.x, g.y), corner = start.y < pageH() / 2 ? 'top' : 'bottom';
     if (dx < 0) {
       if (idx < N - 1) g.mode = 'fwd';
@@ -2377,7 +2386,7 @@ function wireView(){
     else if (k === '+' || k === '=') { e.preventDefault(); glide(); setZoom(zoom * 1.25, true); }
     else if (k === '-' || k === '_') { e.preventDefault(); glide(); setZoom(zoom / 1.25, false); }
     else if (k === '0') { e.preventDefault(); glide(); setZoom(1, false); }
-    else if (k === 'f' || k === 'F') { e.preventDefault(); setFold(!folded); }
+    else if (k === 'f' || k === 'F') { e.preventDefault(); cycleFold(); }
     else if (k === 'Home') { e.preventDefault(); go(-N); }
     else if (k === 'End') { e.preventDefault(); go(N); }
   });

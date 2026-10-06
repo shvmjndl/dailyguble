@@ -67,7 +67,8 @@ new edition, and it can go out to free web hosting.
 | Zoom into one column | Double-tap or double-click it. The text fills the screen at a comfortable size. Do it again to zoom back out. |
 | Move around when zoomed in | Drag the paper |
 | Back to the whole page | **Fit** button, or the 0 key |
-| Fold the paper in half | **Fold** button, or the F key. The paper shows only what's above the fold, with a crease, like a paper on a newsstand. |
+| Fold the paper in half | **Fold** button, or the F key. The paper shows the top half, with a crease, like a paper on a newsstand. |
+| Read the bottom half | Press the button again (**See the bottom half**) or tap the fold edge: the paper flips over. Tap the edge to flip back; **Open the paper** unfolds it. Turning the page opens the next one at its top. |
 
 A short tip appears on a reader's first visit explaining tapping and double-tapping.
 
