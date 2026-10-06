@@ -1,0 +1,13 @@
+{
+  "name": "daily-guble",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A newspaper you can turn, fold and zoom, with a password-protected newsroom editor.",
+  "main": "server.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.js",
+    "hash-password": "node scripts/hash-password.js"
+  },
+  "license": "UNLICENSED"
+}

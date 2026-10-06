@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Sign in · {{TITLE}}</title>
+<meta name="theme-color" content="#231f1a">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Bodoni+Moda:ital,opsz,wght@1,6..96,400&family=Archivo+Narrow:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/login.css">
+<script src="/login.js" defer></script>
+</head>
+<body>
+<main class="gate">
+  <form class="pass" id="loginForm" novalidate>
+    <div class="pass-band"><span>Press pass</span><span>Editors only</span></div>
+    <div class="pass-main">
+      <h1 class="pass-name">{{TITLE}}</h1>
+      <p class="pass-desk">Editor&rsquo;s desk</p>
+      <label class="pass-field" for="username"><span>Username</span>
+        <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+      <label class="pass-field" for="password"><span>Password</span>
+        <input id="password" name="password" type="password" autocomplete="current-password" required></label>
+      <p class="pass-error" id="loginError" role="alert"></p>
+      <button class="pass-go" type="submit" id="loginBtn">Sign in</button>
+      <a class="pass-alt" href="/">Back to the paper</a>
+    </div>
+  </form>
+</main>
+</body>
+</html>
