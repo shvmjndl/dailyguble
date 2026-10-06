@@ -129,24 +129,30 @@ as before, and is shown if the daily one can't be made, for example offline.
 - **Find a word:** drag across its letters in any direction, or tap the first letter and then the last.
 - **Found words** are crossed off the list.
 
-### Clip the pages you like
+### Mark the pages you like
 
-Tap the top-right corner of any page to put a paper clip on it, as you would on
-a real paper. A clip means "I like this page's news":
+Tap the top-right corner of any page to mark it, as you would a real paper. The
+corner folds down into a **dog-ear**. Marking a page means "I like this news":
 
-- **It moves up:** the page comes right after the front page. Several clipped pages
-  go in the order you clipped them.
+- **It moves up:** the page comes right after the front page. Several marked pages
+  go in the order you marked them.
 - **The front page leans your way:** stories from that page's sections lead more often.
-- **It stays:** the clip remains through every hourly update and every visit, until
+- **It stays:** the mark remains through every hourly update and every visit, until
   you tap it again to take it off.
 
-Clipped pages are marked in the page dots. Clips are kept only in your own browser.
+Marked pages are also shown in the page dots.
 
-### Night edition
+### The Paper menu
 
-After sunset where you are, the paper turns to dark newsprint, and it goes back at
-sunrise. The button at the right of the toolbar cycles through **Auto** (dark after
-sunset), **Dark** and **Day**, and the paper remembers your choice.
+The **Paper** button (☾ or ☀) at the right of the toolbar opens two settings:
+
+- **Look:** **Auto** turns the paper to dark newsprint at sunset where you are and
+  back at sunrise. **Dark** and **Day** keep it one way.
+- **Mark pages you like with:** **Dog-ear** (the default), **Paper clip**,
+  **Coffee ring**, **Pencil tick**, **Ribbon** or **Push pin**. Pages you've
+  already marked switch to the new mark.
+
+Your choices, and your marks, are kept in your own browser until you change them.
 
 ### Phones and tablets
 

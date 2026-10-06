@@ -539,17 +539,70 @@ body.editing .reader-sheet{user-select:text}
 .pz-credit{text-align:center}
 .pz-daily .cw-clues{grid-template-columns:1fr;gap:6px}
 
-/* ---------- paper clips on pages ---------- */
-.page-clip{position:absolute;top:-6px;right:58px;width:26px;height:62px;z-index:9;padding:0;border:0;background:none;cursor:pointer;
-  transform:rotate(7deg);transform-origin:50% 0;opacity:.16;filter:grayscale(1);transition:opacity .2s ease,transform .25s ease}
-.page-clip svg{display:block;width:100%;height:100%}
-.page-clip:hover{opacity:.42}
-.page-clip.on{opacity:1;filter:drop-shadow(1px 2px 1.5px rgba(0,0,0,.35));transform:rotate(7deg) translateY(2px)}
-.page-clip.on:hover{opacity:.9}
+/* ---------- marking pages: dog-ear, paper clip, coffee ring, pencil tick, ribbon, push pin ---------- */
+.page-clip{position:absolute;z-index:9;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.page-clip svg{display:block;width:100%;height:100%;overflow:visible}
 .page-clip:focus-visible{outline:2px solid var(--press-red);outline-offset:2px}
-@media (pointer:coarse){ .page-clip{width:30px;height:70px;opacity:.22} .page-clip.on{opacity:1} }
 body.editing .page-clip{display:none}
 .dots b.clipped{box-shadow:0 0 0 2px #c9ced4}
+/* not marked yet: a faint hint of the mark, a little stronger under the pointer */
+.page-clip:not(.on){opacity:.18;transition:opacity .2s ease}
+.page-clip:not(.on):hover{opacity:.45}
+@media (pointer:coarse){ .page-clip:not(.on){opacity:.24} }
+
+/* dog-ear: the corner folds down, showing the back of the page and the desk behind */
+.mark-dogear{top:0;right:0;width:64px;height:64px}
+.mark-dogear .fold{position:absolute;top:0;right:0;width:100%;height:100%;transition:width .28s ease,height .28s ease}
+.mark-dogear .fold::before{content:"";position:absolute;inset:0;background:linear-gradient(to bottom left,#1d1915 0 50%,transparent 50%)}
+.mark-dogear .fold::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(to bottom left,transparent 49.6%,rgba(0,0,0,.28) 50%,var(--paper-lit) 53%,color-mix(in srgb,var(--paper) 82%,#000) 100%);
+  filter:drop-shadow(-2px 3px 2.5px rgba(0,0,0,.33))}
+.mark-dogear:not(.on) .fold{width:22px;height:22px}
+.mark-dogear:not(.on){opacity:.55}
+.mark-dogear:not(.on):hover{opacity:.9}
+.mark-dogear:not(.on):hover .fold{width:30px;height:30px}
+
+/* paper clip over the top edge */
+.mark-clip{top:-6px;right:58px;width:26px;height:62px;transform:rotate(7deg);transform-origin:50% 0}
+.mark-clip.on{filter:drop-shadow(1px 2px 1.5px rgba(0,0,0,.35));transform:rotate(7deg) translateY(2px)}
+.mark-clip:not(.on){filter:grayscale(1)}
+
+/* coffee ring, cut off by the edge of the page */
+.mark-coffee{top:-22px;right:-24px;width:104px;height:104px;color:#6b4423;transform:rotate(-12deg)}
+html.night .mark-coffee{color:#c79a6b}
+.mark-coffee:not(.on){opacity:.1}
+
+/* a tick in red pencil */
+.mark-tick{top:4px;right:30px;width:40px;height:40px;color:var(--press-red);transform:rotate(-6deg)}
+
+/* a ribbon marker hanging over the top edge */
+.mark-ribbon{top:-3px;right:48px;width:18px;height:84px;filter:drop-shadow(1px 2px 2px rgba(0,0,0,.35))}
+.mark-ribbon .band{position:absolute;inset:0;background:linear-gradient(90deg,#5e130c,#a8342a 40%,#c4483b 55%,#7a2016);
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 84%,0 100%)}
+.mark-ribbon:not(.on){height:26px}
+
+/* a push pin */
+.mark-pin{top:2px;right:28px;width:34px;height:34px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+
+/* ---------- the Paper menu ---------- */
+.paper-menu{position:fixed;z-index:60;right:12px;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:min(330px,calc(100vw - 24px));
+  background:linear-gradient(#2e2922,#1d1a15);border:1px solid #4a4136;border-radius:6px;box-shadow:0 14px 40px rgba(0,0,0,.55);padding:12px 12px 10px;color:#ecdfc3;font-family:var(--f-util)}
+.paper-menu[hidden]{display:none}
+.pm-head{font:600 11px/1 var(--f-util);letter-spacing:.08em;text-transform:uppercase;color:#bfb196;margin:2px 2px 8px}
+.pm-head+.pm-looks,.pm-head+.pm-marks{margin-bottom:12px}
+.pm-looks{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pm-opt,.pm-mark{font-family:var(--f-util);color:#ecdfc3;background:#15120f;border:1px solid #403830;border-radius:4px;padding:8px 6px;cursor:pointer;text-align:center}
+.pm-opt b,.pm-mark b{display:block;font-size:13px;font-weight:600}
+.pm-opt span{display:block;font-size:10.5px;color:#a89c84;margin-top:2px}
+.pm-opt[aria-pressed="true"],.pm-mark[aria-pressed="true"]{border-color:#c9473a;background:linear-gradient(#4a1f19,#2c1410);box-shadow:inset 0 0 0 1px #c9473a}
+.pm-marks{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pm-mark b{font-size:11.5px;margin-top:6px}
+.pm-tile{position:relative;display:block;height:54px;border-radius:2px;overflow:hidden;background:var(--paper);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.pm-tile .page-clip{pointer-events:none;opacity:1;transform-origin:top right;scale:.62}
+.pm-tile .mark-dogear{scale:.7}
+.pm-note{font-size:11.5px;line-height:1.4;color:#a89c84;margin:2px 2px 0}
+@media (max-width:640px), (max-height:520px){ .paper-menu{bottom:calc(64px + env(safe-area-inset-bottom,0px))} }
 
 /* ---------- the night edition: dark newsprint after sunset ---------- */
 html.night .grain{opacity:.4}
