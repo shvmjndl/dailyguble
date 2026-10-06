@@ -38,6 +38,9 @@ eq([a[0].title, a[0].link, a[0].author], ['Atom title', 'https://ex.com/atom', '
 eq(toText('&lt;p&gt;Hi&lt;/p&gt;'), 'Hi', 'escaped HTML');
 eq(canonicalLink('https://x.com/p?ref=home&q=2'), 'https://x.com/p?q=2', 'ref dropped');
 
+const plug = parseFeed('<rss><item><title>T</title><link>https://ex.com/p</link><description>Graves were found in NSW. Find more from the Unmarked graves investigation here Get our breaking news email, free app or daily news podcast</description><pubDate>Tue, 06 Oct 2026 10:00:00 GMT</pubDate></item></rss>', { id: 'g', outlet: 'G', section: 'world' });
+eq(plug[0].summary, 'Graves were found in NSW.', 'newsletter plugs removed');
+
 // ---- content filter
 const check = makeFilter({});
 const f = (title, summary = '') => { const r = check({ title, summary, outlet: 'X', id: 'i' }); return r.action + (r.category ? ':' + r.category : ''); };

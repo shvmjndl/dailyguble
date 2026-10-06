@@ -214,7 +214,7 @@ BLOCKS.story = function(b){
   var w = el('div', 'art story story-' + (b.size || 'medium') + (b.size === 'lead' ? ' lead-wrap' : ''));
   var k = storyKicker(s, b);
   if (k) w.appendChild(txt('p', 'kicker', k));
-  var h = heading('', b.size === 'lead' ? 'lead' : b.size); h.textContent = s.title || ''; w.appendChild(h);
+  var h = heading('', b.size === 'lead' ? 'lead' : b.size); h.textContent = (s.title || '').replace(/ ([\u2013\u2014-]) /g, '\u00a0$1 '); w.appendChild(h);   // a dash never starts a line
   if (s.note) w.appendChild(txt('p', 'story-note', s.note));
   var sum = trimWords(s.summary, b.sum);
   if (sum) {

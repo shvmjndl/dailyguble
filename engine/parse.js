@@ -86,6 +86,8 @@ function atomLink(block) {
 
 /* Remove the bits feeds tack onto summaries. */
 function tidySummary(s, title) {
+  // newsletter and app plugs some outlets add to every summary
+  s = s.replace(/\s*(?:Get our [^.]*?(?:email|app|podcast)[^.]*|Sign up (?:for|to) [^.]*|Find more (?:from|of) [^.]* here|Follow (?:our|the) live coverage[^.]*|Read more:[^.]*)(?:\.|…|\.\.\.)?/gi, ' ').trim();
   s = s.replace(/\s*(Continue reading|Read more|Read the full story|The post .+ appeared first on .+)\s*\.{0,3}\s*$/i, '')
        .replace(/\s*\[(…|\.\.\.)\]\s*$/, '\u2026')
        .replace(/\s*Photograph:.*$/i, '');

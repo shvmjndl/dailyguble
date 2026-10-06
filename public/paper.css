@@ -520,11 +520,11 @@ body.editing .reader-sheet{user-select:text}
 .reader-sheet .inside-list li{font-size:17px;padding:8px 0}
 
 /* ---------- the word game ---------- */
-.pz-wd{max-width:300px;margin:0 auto}
-.wd-grid{display:grid;gap:4px;margin:4px auto 0;width:min(100%,200px);cursor:pointer}
+.pz-wd{margin:0 auto}
+.wd-grid{display:grid;gap:4px;margin:4px auto 0;width:100%;cursor:pointer}
 .wd-row{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .wd-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--rule);background:var(--cell);
-  font:700 17px/1 var(--f-head);color:var(--ink);text-transform:uppercase}
+  font:700 22px/1 var(--f-head);color:var(--ink);text-transform:uppercase}
 .wd-cell.typed{border-color:var(--ink)}
 .wd-cell.hit,.wd-key.hit{background:var(--ink);color:var(--cell);border-color:var(--ink)}
 .wd-cell.near,.wd-key.near{background:color-mix(in srgb, var(--press-red) 78%, var(--cell));color:#fff;border-color:transparent}
@@ -538,4 +538,3 @@ body.editing .reader-sheet{user-select:text}
 .pz-wd.live .wd-grid{outline:2px solid var(--press-red);outline-offset:3px}
 .pz-credit{text-align:center}
 .pz-daily .cw-clues{grid-template-columns:1fr;gap:6px}
-.pz-daily .cw-grid{max-width:230px;margin:0 auto}
