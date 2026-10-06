@@ -4,6 +4,7 @@
  * words (common words like "the" and "says" removed, plurals folded):
  *   at least 3 shared words covering half of the shorter headline,
  *   or, for very short headlines, 2 shared words covering two thirds.
+ * Or: two shared words, a rare word in common and enough overlap in the summaries (see looseMatch).
  * (Thresholds were tuned on a day of real headlines from all the feeds.)
  * An inverted index means each headline is only compared with those sharing a word.
  */
@@ -54,13 +55,34 @@ export function sameEvent(a, b, shared) {
  */
 export function clusterStories(stories) {
   const group = new Int32Array(stories.length), groups = [], index = new Map();
+  /*
+   * Headlines sharing only two words can still be one event: when their headline-and-summary
+   * wording overlaps enough and they share a word that is rare in the day's news (a name like
+   * "Halzen"). The overlap needed is lower when that rare word is a name written with a capital
+   * inside a headline ("Lego", "Messi"). Tuned on a day of real feeds: different events with two
+   * shared words overlap under 14%, the same event mostly over it.
+   */
+  const df = new Map(), lead = stories.map((s) => new Set(s.leadTokens || []));
+  for (const L of lead) for (const t of L) df.set(t, (df.get(t) || 0) + 1);
+  const names = stories.map((s) => new Set(tokens(String(s.title || '').split(/\s+/).slice(1).filter((w) => /^[A-Z][a-z]/.test(w)).join(' '))));
+  function looseMatch(a, b) {
+    let rare = false, name = false, both = 0;
+    for (const t of lead[a]) if (lead[b].has(t)) {
+      both++;
+      if (t.length >= 4 && df.get(t) <= 4) { rare = true; if (names[a].has(t) || names[b].has(t)) name = true; }
+    }
+    if (!rare) return false;
+    const overlap = both / (lead[a].size + lead[b].size - both);
+    return overlap >= 0.14 || (name && overlap >= 0.10);
+  }
   for (let i = 0; i < stories.length; i++) {
     const s = stories[i], shared = new Map();
     for (const t of s.tokens) { const list = index.get(t); if (list) for (const j of list) shared.set(j, (shared.get(j) || 0) + 1); }
     const hits = new Map(), strong = new Set();
     for (const [j, n] of shared) {
       const o = stories[j];
-      if (o.outlet === s.outlet || !sameEvent(s.tokens, o.tokens, n)) continue;
+      // the same event: headlines that share most of their words, or two words and a rare name
+      if (o.outlet === s.outlet || !(sameEvent(s.tokens, o.tokens, n) || (n >= 2 && looseMatch(i, j)))) continue;
       hits.set(group[j], (hits.get(group[j]) || 0) + 1);
       if (n >= 4 || n / Math.min(s.tokens.length, o.tokens.length) >= 0.6) strong.add(group[j]);
     }

@@ -1286,7 +1286,9 @@ function clampPan(){
 }
 function apply(loose){
   if (!loose) clampPan();
-  book.style.transform = 'translate(-50%,-50%) translate(' + panX.toFixed(1) + 'px,' + panY.toFixed(1) + 'px) scale(' + (fit * zoom).toFixed(4) + ')';
+  // folded, the visible half is centred: the page shifts down (top half) or up (bottom half)
+  var foldY = folded ? (foldSide === 'top' ? 1 : -1) * (PAGE_H - FOLD_H) / 2 * fit * zoom : 0;
+  book.style.transform = 'translate(-50%,-50%) translate(' + panX.toFixed(1) + 'px,' + (panY + foldY).toFixed(1) + 'px) scale(' + (fit * zoom).toFixed(4) + ')';
   zoomRead.textContent = Math.round(zoom * 100) + '%';
   stage.classList.toggle('pannable', zoom > 1.02);
 }
@@ -1295,7 +1297,6 @@ function glide(){
   book.classList.add('glide'); clearTimeout(glide.t); glide.t = setTimeout(function(){ book.classList.remove('glide'); }, 480);
 }
 function measure(){
-  book.style.height = pageH() + 'px';
   fit = Math.min((stage.clientWidth - 28) / PAGE_W, (stage.clientHeight - 28) / pageH());
   if (!isFinite(fit) || fit <= 0) fit = 1;
   apply();
@@ -1339,7 +1340,10 @@ function setFold(on, side){
   foldBtn.innerHTML = !on ? '<span class="long">Fold in half</span><span class="short">Fold</span>'
     : foldSide === 'top' ? '<span class="long">See the bottom half</span><span class="short">Bottom</span>'
     : '<span class="long">Open the paper</span><span class="short">Open</span>';
-  book.classList.add('folding'); book.classList.toggle('folded', on); book.classList.toggle('folded-bottom', foldSide === 'bottom');
+  clearTimeout(setFold.t);
+  if (!book.classList.contains('folding')) { book.classList.add('folding'); void book.offsetWidth; }   // start from the open shape
+  book.classList.toggle('folded', on); book.classList.toggle('folded-bottom', foldSide === 'bottom');
+  if (!on) setFold.t = setTimeout(function(){ if (!folded) book.classList.remove('folding'); }, 500);   // open again: no clip at all
   panX = 0; panY = 0; measure();
 }
 /* The Fold button and the F key: fold (top half) → the bottom half → open again. */

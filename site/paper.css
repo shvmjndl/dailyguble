@@ -42,8 +42,13 @@ body{
 .stage.grabbing{cursor:grabbing}
 .stage.pannable{cursor:grab}
 .book{position:absolute;left:50%;top:50%;width:800px;height:1120px;will-change:transform}
-.book.folding{transition:height .5s cubic-bezier(.3,.8,.2,1)}
-.book.folded{overflow:hidden}
+/* folding never changes the paper's size (that would re-lay out every frame): a clip hides the
+   folded half and the page moves to stay centred, both of which the phone animates cheaply */
+/* the clip only limits top and bottom (a turning page swings far out to the sides) */
+.book.folding{clip-path:polygon(-200% -100%,300% -100%,300% 200%,-200% 200%);
+  transition:clip-path .45s cubic-bezier(.3,.8,.2,1),transform .45s cubic-bezier(.3,.8,.2,1)}
+.book.folding.folded{clip-path:polygon(-200% -100%,300% -100%,300% 580px,-200% 580px)}
+.book.folding.folded-bottom{clip-path:polygon(-200% 540px,300% 540px,300% 200%,-200% 200%)}
 .stack{position:absolute;inset:0;z-index:0}
 .stack i{position:absolute;inset:0;background:var(--paper);box-shadow:0 1px 0 rgba(0,0,0,.35)}
 .stack i:nth-child(1){transform:translate(5px,6px) rotate(.35deg);background:color-mix(in srgb, var(--paper) 90%, #000)}
@@ -61,15 +66,15 @@ body{
 .crease{position:absolute;left:0;right:0;top:50%;height:74px;margin-top:-37px;pointer-events:none;z-index:7;
   background:linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(90,70,40,.07) 42%, rgba(60,45,22,.17) 50%, rgba(255,255,255,.3) 52%, rgba(90,70,40,.05) 62%, rgba(0,0,0,0) 100%)}
 .folded .crease{background:linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(50,38,18,.2) 44%, rgba(30,22,8,.42) 50%, rgba(0,0,0,0) 51%)}
-.folded-edge{position:absolute;left:0;right:0;top:566px;height:14px;z-index:9;display:none;
-  background:linear-gradient(to bottom,#cfc7b2,#b4aa91 55%,#8e8471);box-shadow:0 10px 22px rgba(0,0,0,.5)}
-.folded .folded-edge{display:block}
-.folded .folded-edge{cursor:pointer}
-/* the bottom half: the sheet slides up inside the folded frame; the fold is now at the top */
-.book.folded-bottom .sheet{top:-554px}
-.book.folding .sheet{transition:top .5s cubic-bezier(.3,.8,.2,1)}
-.folded-bottom .folded-edge{top:554px;background:linear-gradient(to top,#cfc7b2,#b4aa91 55%,#8e8471);box-shadow:0 -10px 22px rgba(0,0,0,.5)}
+/* the fold's edge rides up with the fold line (it waits past the bottom of the page when open) */
+.folded-edge{position:absolute;left:0;right:0;top:566px;height:14px;z-index:9;pointer-events:none;
+  background:linear-gradient(to bottom,#cfc7b2,#b4aa91 55%,#8e8471);box-shadow:0 10px 22px rgba(0,0,0,.5);
+  transform:translateY(554px);transition:transform .45s cubic-bezier(.3,.8,.2,1)}
+.folded .folded-edge{transform:none;pointer-events:auto;cursor:pointer}
+/* the bottom half: the fold is now along the top */
+.folded-bottom .folded-edge{transform:translateY(-26px);background:linear-gradient(to top,#cfc7b2,#b4aa91 55%,#8e8471);box-shadow:0 -10px 22px rgba(0,0,0,.5)}
 .folded-bottom .crease{opacity:0}
+body.reduced .book.folding,body.reduced .folded-edge{transition:none}
 .corner{position:absolute;width:132px;height:132px;bottom:0;z-index:8;border:0;background:none;padding:0;cursor:pointer}
 .corner.next{right:0}
 .corner.prev{left:0}

@@ -45,7 +45,7 @@ export function combine(parts, extras = {}, { now = Date.now() } = {}) {
 
   // the same event across outlets (opinion pieces stand alone)
   const news = kept.filter((s) => s.section !== 'opinion');
-  for (const s of news) s.tokens = tokens(s.title);
+  for (const s of news) { s.tokens = tokens(s.title); s.leadTokens = tokens(s.title + ' ' + String(s.summary || '').slice(0, 220)); }
   const clusters = clusterStories(news).map((members) => {
     const outlets = new Set(members.map((m) => m.outlet));
     let newest = 0;

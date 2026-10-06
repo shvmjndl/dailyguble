@@ -188,6 +188,7 @@ function regionOf(text) {
  * words (common words like "the" and "says" removed, plurals folded):
  *   at least 3 shared words covering half of the shorter headline,
  *   or, for very short headlines, 2 shared words covering two thirds.
+ * Or: two shared words, a rare word in common and enough overlap in the summaries (see looseMatch).
  * (Thresholds were tuned on a day of real headlines from all the feeds.)
  * An inverted index means each headline is only compared with those sharing a word.
  */
@@ -237,13 +238,34 @@ function sameEvent(a, b, shared) {
  */
 function clusterStories(stories) {
   const group = new Int32Array(stories.length), groups = [], index = new Map();
+  /*
+   * Headlines sharing only two words can still be one event: when their headline-and-summary
+   * wording overlaps enough and they share a word that is rare in the day's news (a name like
+   * "Halzen"). The overlap needed is lower when that rare word is a name written with a capital
+   * inside a headline ("Lego", "Messi"). Tuned on a day of real feeds: different events with two
+   * shared words overlap under 14%, the same event mostly over it.
+   */
+  const df = new Map(), lead = stories.map((s) => new Set(s.leadTokens || []));
+  for (const L of lead) for (const t of L) df.set(t, (df.get(t) || 0) + 1);
+  const names = stories.map((s) => new Set(tokens(String(s.title || '').split(/\s+/).slice(1).filter((w) => /^[A-Z][a-z]/.test(w)).join(' '))));
+  function looseMatch(a, b) {
+    let rare = false, name = false, both = 0;
+    for (const t of lead[a]) if (lead[b].has(t)) {
+      both++;
+      if (t.length >= 4 && df.get(t) <= 4) { rare = true; if (names[a].has(t) || names[b].has(t)) name = true; }
+    }
+    if (!rare) return false;
+    const overlap = both / (lead[a].size + lead[b].size - both);
+    return overlap >= 0.14 || (name && overlap >= 0.10);
+  }
   for (let i = 0; i < stories.length; i++) {
     const s = stories[i], shared = new Map();
     for (const t of s.tokens) { const list = index.get(t); if (list) for (const j of list) shared.set(j, (shared.get(j) || 0) + 1); }
     const hits = new Map(), strong = new Set();
     for (const [j, n] of shared) {
       const o = stories[j];
-      if (o.outlet === s.outlet || !sameEvent(s.tokens, o.tokens, n)) continue;
+      // the same event: headlines that share most of their words, or two words and a rare name
+      if (o.outlet === s.outlet || !(sameEvent(s.tokens, o.tokens, n) || (n >= 2 && looseMatch(i, j)))) continue;
       hits.set(group[j], (hits.get(group[j]) || 0) + 1);
       if (n >= 4 || n / Math.min(s.tokens.length, o.tokens.length) >= 0.6) strong.add(group[j]);
     }
@@ -307,7 +329,7 @@ function combine(parts, extras = {}, { now = Date.now() } = {}) {
 
   // the same event across outlets (opinion pieces stand alone)
   const news = kept.filter((s) => s.section !== 'opinion');
-  for (const s of news) s.tokens = tokens(s.title);
+  for (const s of news) { s.tokens = tokens(s.title); s.leadTokens = tokens(s.title + ' ' + String(s.summary || '').slice(0, 220)); }
   const clusters = clusterStories(news).map((members) => {
     const outlets = new Set(members.map((m) => m.outlet));
     let newest = 0;
@@ -1994,7 +2016,9 @@ function clampPan(){
 }
 function apply(loose){
   if (!loose) clampPan();
-  book.style.transform = 'translate(-50%,-50%) translate(' + panX.toFixed(1) + 'px,' + panY.toFixed(1) + 'px) scale(' + (fit * zoom).toFixed(4) + ')';
+  // folded, the visible half is centred: the page shifts down (top half) or up (bottom half)
+  var foldY = folded ? (foldSide === 'top' ? 1 : -1) * (PAGE_H - FOLD_H) / 2 * fit * zoom : 0;
+  book.style.transform = 'translate(-50%,-50%) translate(' + panX.toFixed(1) + 'px,' + (panY + foldY).toFixed(1) + 'px) scale(' + (fit * zoom).toFixed(4) + ')';
   zoomRead.textContent = Math.round(zoom * 100) + '%';
   stage.classList.toggle('pannable', zoom > 1.02);
 }
@@ -2003,7 +2027,6 @@ function glide(){
   book.classList.add('glide'); clearTimeout(glide.t); glide.t = setTimeout(function(){ book.classList.remove('glide'); }, 480);
 }
 function measure(){
-  book.style.height = pageH() + 'px';
   fit = Math.min((stage.clientWidth - 28) / PAGE_W, (stage.clientHeight - 28) / pageH());
   if (!isFinite(fit) || fit <= 0) fit = 1;
   apply();
@@ -2047,7 +2070,10 @@ function setFold(on, side){
   foldBtn.innerHTML = !on ? '<span class="long">Fold in half</span><span class="short">Fold</span>'
     : foldSide === 'top' ? '<span class="long">See the bottom half</span><span class="short">Bottom</span>'
     : '<span class="long">Open the paper</span><span class="short">Open</span>';
-  book.classList.add('folding'); book.classList.toggle('folded', on); book.classList.toggle('folded-bottom', foldSide === 'bottom');
+  clearTimeout(setFold.t);
+  if (!book.classList.contains('folding')) { book.classList.add('folding'); void book.offsetWidth; }   // start from the open shape
+  book.classList.toggle('folded', on); book.classList.toggle('folded-bottom', foldSide === 'bottom');
+  if (!on) setFold.t = setTimeout(function(){ if (!folded) book.classList.remove('folding'); }, 500);   // open again: no clip at all
   panX = 0; panY = 0; measure();
 }
 /* The Fold button and the F key: fold (top half) → the bottom half → open again. */
@@ -2525,9 +2551,9 @@ var NEWS_TEMPLATES = {
     { w: 1, pri: 3, slots: [{ markets: true }, { sect: 'Business in brief' }, { briefs: 'business|tech', n: 12 }] }
   ] },
   science: { center: 'Science, Tech &amp; Health', cols: [
-    { w: 1, pri: 1, slots: [{ sect: 'Science', strong: true }, { story: 'science', size: 'big', sum: 340 }, { fill: 'science', size: 'small', sum: 220 }] },
-    { w: 1, pri: 2, slots: [{ sect: 'Technology', strong: true }, { story: 'tech', size: 'big', sum: 340 }, { fill: 'tech', size: 'small', sum: 220 }] },
-    { w: 1, pri: 3, slots: [{ sect: 'Health', strong: true }, { story: 'health', size: 'big', sum: 340 }, { fill: 'health', size: 'small', sum: 220 }] }
+    { w: 1, pri: 1, slots: [{ sect: 'Science', strong: true }, { story: 'science', size: 'big', sum: 340 }, { fill: 'science|climate', size: 'small', sum: 220 }] },
+    { w: 1, pri: 2, slots: [{ sect: 'Technology', strong: true }, { story: 'tech', size: 'big', sum: 340 }, { fill: 'tech|business', size: 'small', sum: 220 }] },
+    { w: 1, pri: 3, slots: [{ sect: 'Health', strong: true }, { story: 'health', size: 'big', sum: 340 }, { fill: 'health|science', size: 'small', sum: 220 }] }
   ], strip: [{ w: 1, slots: [{ sect: 'Climate &amp; environment' }, { briefs: 'climate', n: 4, row: true }] }] },
   opinion: { center: 'Opinion &amp; Analysis', cols: [
     { w: 1.4, pri: 1, slots: [{ story: 'opinion', size: 'big', sum: 520, label: true }, { fill: 'opinion', size: 'medium', sum: 320, label: true }] },
@@ -2537,7 +2563,7 @@ var NEWS_TEMPLATES = {
   sport: { center: 'Sport &amp; Culture', cols: [
     { w: 1, pri: 1, slots: [{ sect: 'Sport', strong: true }, { story: 'sport', size: 'big', sum: 340 }, { fill: 'sport', size: 'small', sum: 220 }] },
     { w: 1, pri: 3, slots: [{ fill: 'sport|culture', size: 'small', sum: 200 }] },
-    { w: 1, pri: 2, slots: [{ sect: 'Culture', strong: true }, { story: 'culture', size: 'big', sum: 340 }, { fill: 'culture', size: 'small', sum: 220 }] }
+    { w: 1, pri: 2, slots: [{ sect: 'Culture', strong: true }, { story: 'culture', size: 'big', sum: 340 }, { fill: 'culture|sport', size: 'small', sum: 220 }] }
   ], strip: [{ w: 1, slots: [{ onthisday: true }] }] }
 };
 

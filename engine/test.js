@@ -89,6 +89,14 @@ const groups = clusterStories([
 ]).map((g) => g.map((s) => s.outlet).join('+'));
 eq(groups, ['BBC+NPR+F24+Guardian', 'Scroll+Guardian', 'BBC+F24', 'NYT', 'HT', 'Hindu'], 'events grouped without chaining');
 
+const L = (outlet, title, summary) => ({ outlet, title, tokens: tokens(title), leadTokens: tokens(title + ' ' + summary) });
+const pad = Array.from({ length: 12 }, (_, k) => L('Pad' + k, 'Unrelated story number ' + k + ' about weather markets', 'Physicists and other people talked about many things'));
+const g2 = clusterStories([L('BBC', "'Ghost particles' from space telescope wins physics Nobel", 'Belgian physicist Prof Francis Halzen has won for his pioneering work'),
+  L('NPR', 'Francis Halzen awarded physics Nobel for neutrino observatory', 'Halzen led the IceCube project at the South Pole'),
+  L('F24', 'Chemistry Nobel goes to battery pioneers', 'The prize in chemistry was awarded for lithium research')].concat(pad));
+eq(g2[0].map((s) => s.outlet), ['BBC', 'NPR'], 'same event found through a rare shared name');
+eq(g2[1].map((s) => s.outlet), ['F24'], 'a different Nobel stays apart');
+
 // ---- parts and combine
 const feed = { id: 'bbc-world', outlet: 'BBC News', section: 'world' };
 const part = processPart([{ feed, text: rss.replace('Rates &amp; markets', 'Graphic video of attack shared online') + '</item></channel></rss>' }], {}, NOW);

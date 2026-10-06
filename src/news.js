@@ -128,9 +128,9 @@ var NEWS_TEMPLATES = {
     { w: 1, pri: 3, slots: [{ markets: true }, { sect: 'Business in brief' }, { briefs: 'business|tech', n: 12 }] }
   ] },
   science: { center: 'Science, Tech &amp; Health', cols: [
-    { w: 1, pri: 1, slots: [{ sect: 'Science', strong: true }, { story: 'science', size: 'big', sum: 340 }, { fill: 'science', size: 'small', sum: 220 }] },
-    { w: 1, pri: 2, slots: [{ sect: 'Technology', strong: true }, { story: 'tech', size: 'big', sum: 340 }, { fill: 'tech', size: 'small', sum: 220 }] },
-    { w: 1, pri: 3, slots: [{ sect: 'Health', strong: true }, { story: 'health', size: 'big', sum: 340 }, { fill: 'health', size: 'small', sum: 220 }] }
+    { w: 1, pri: 1, slots: [{ sect: 'Science', strong: true }, { story: 'science', size: 'big', sum: 340 }, { fill: 'science|climate', size: 'small', sum: 220 }] },
+    { w: 1, pri: 2, slots: [{ sect: 'Technology', strong: true }, { story: 'tech', size: 'big', sum: 340 }, { fill: 'tech|business', size: 'small', sum: 220 }] },
+    { w: 1, pri: 3, slots: [{ sect: 'Health', strong: true }, { story: 'health', size: 'big', sum: 340 }, { fill: 'health|science', size: 'small', sum: 220 }] }
   ], strip: [{ w: 1, slots: [{ sect: 'Climate &amp; environment' }, { briefs: 'climate', n: 4, row: true }] }] },
   opinion: { center: 'Opinion &amp; Analysis', cols: [
     { w: 1.4, pri: 1, slots: [{ story: 'opinion', size: 'big', sum: 520, label: true }, { fill: 'opinion', size: 'medium', sum: 320, label: true }] },
@@ -140,7 +140,7 @@ var NEWS_TEMPLATES = {
   sport: { center: 'Sport &amp; Culture', cols: [
     { w: 1, pri: 1, slots: [{ sect: 'Sport', strong: true }, { story: 'sport', size: 'big', sum: 340 }, { fill: 'sport', size: 'small', sum: 220 }] },
     { w: 1, pri: 3, slots: [{ fill: 'sport|culture', size: 'small', sum: 200 }] },
-    { w: 1, pri: 2, slots: [{ sect: 'Culture', strong: true }, { story: 'culture', size: 'big', sum: 340 }, { fill: 'culture', size: 'small', sum: 220 }] }
+    { w: 1, pri: 2, slots: [{ sect: 'Culture', strong: true }, { story: 'culture', size: 'big', sum: 340 }, { fill: 'culture|sport', size: 'small', sum: 220 }] }
   ], strip: [{ w: 1, slots: [{ onthisday: true }] }] }
 };
 
