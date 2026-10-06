@@ -1220,6 +1220,7 @@ function mountShell(){
 
 function buildSheets(issue){
   PZ.release();
+  finishCurl();                                   // never leave a half-turned page behind a redraw
   sheets.forEach(function(s){ s.remove(); });
   BID = 0; BIDMAP = {};
   var pages = issue.pages || [], m = issue.masthead || {};
@@ -1270,6 +1271,8 @@ function go(step){
   var t = Math.min(N - 1, Math.max(0, idx + step));
   if (t === idx) return;
   PZ.release();
+  if (Math.abs(t - idx) === 1 && animateTurn(t - idx)) return;
+  finishCurl();
   idx = t; zoom = 1; panX = 0; panY = 0; glide(); apply(); paint();
 }
 function goTo(i){ go(i - idx); }
@@ -1298,6 +1301,159 @@ function focusOn(node){
 /* Story text is 9.4px on the page; let zoom reach about 24px on any screen. */
 function maxZoom(){ return Math.max(4, 24 / (9.4 * fit)); }
 function isEditing(){ return document.body.classList.contains('editing'); }
+
+/* =========================================================
+   PAGE CURL: turning a page bends it like newsprint.
+   The fold line follows the finger (it is the line halfway between
+   the page's corner and where the corner is being pulled to). The
+   part past the fold flips over, showing the back of the sheet with
+   faint ink showing through, shaded where it curves, and casts a
+   soft shadow on the page underneath. The spine holds the paper,
+   so the corner can never be pulled further than the page is wide.
+   ========================================================= */
+var CURL = null, curlEls = null;
+function curlLayer(){
+  if (curlEls && curlEls.root.parentNode === book) return curlEls;
+  var root = el('div', 'curl'); root.setAttribute('aria-hidden', 'true'); root.hidden = true;
+  var cast = el('div', 'curl-cast'), castStrip = el('div', 'curl-strip curl-cast-strip');
+  var wrap = el('div', 'curl-flap-wrap'), flap = el('div', 'curl-flap'), ink = el('div', 'curl-ink'), shade = el('div', 'curl-strip curl-shade');
+  cast.appendChild(castStrip); flap.appendChild(ink); flap.appendChild(shade); wrap.appendChild(flap);
+  root.appendChild(cast); root.appendChild(wrap); book.appendChild(root);
+  curlEls = { root: root, cast: cast, castStrip: castStrip, wrap: wrap, flap: flap, ink: ink, shade: shade };
+  return curlEls;
+}
+/* Keep the part of a polygon on one side of the fold line. */
+function clipHalf(poly, M, n, cornerSide){
+  var out = [];
+  function side(p){ var v = (p[0] - M.x) * n.x + (p[1] - M.y) * n.y; return cornerSide ? v : -v; }
+  for (var i = 0; i < poly.length; i++) {
+    var a = poly[i], b = poly[(i + 1) % poly.length], sa = side(a), sb = side(b);
+    if (sa >= 0) out.push(a);
+    if ((sa >= 0) !== (sb >= 0)) { var t = sa / (sa - sb); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
+  }
+  return out;
+}
+function polyCss(pts){
+  if (pts.length < 3) return 'polygon(0 0, 0 0, 0 0)';
+  return 'polygon(' + pts.map(function(p){ return p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px'; }).join(', ') + ')';
+}
+function setClip(node, v){ node.style.clipPath = v; node.style.webkitClipPath = v; }
+/* The spine holds the sheet: the corner stays within a page-width of the spine. */
+function constrainCorner(P, C){
+  var H = pageH(), near = { x: 0, y: C.y }, far = { x: 0, y: C.y === 0 ? H : 0 }, D = Math.hypot(PAGE_W, H);
+  var dx = P.x - near.x, dy = P.y - near.y, d = Math.hypot(dx, dy);
+  if (d > PAGE_W) { P.x = near.x + dx / d * PAGE_W; P.y = near.y + dy / d * PAGE_W; }
+  dx = P.x - far.x; dy = P.y - far.y; d = Math.hypot(dx, dy);
+  if (d > D) { P.x = far.x + dx / d * D; P.y = far.y + dy / d * D; }
+  return P;
+}
+function drawCurl(c){
+  var E = curlLayer(), face = c.sheet.firstChild, C = c.C, P = c.P;
+  var nx = C.x - P.x, ny = C.y - P.y, len = Math.hypot(nx, ny);
+  if (len < 0.5) { setClip(face, ''); E.root.hidden = true; return; }
+  nx /= len; ny /= len;
+  var M = { x: (C.x + P.x) / 2, y: (C.y + P.y) / 2 }, rect = [[0, 0], [PAGE_W, 0], [PAGE_W, PAGE_H], [0, PAGE_H]];
+  var front = clipHalf(rect, M, { x: nx, y: ny }, false), folded = clipHalf(rect, M, { x: nx, y: ny }, true);
+  setClip(face, polyCss(front));
+  E.root.hidden = false;
+  // mirror the folded part across the fold line
+  var dx = -ny, dy = nx, a = dx * dx - dy * dy, b = 2 * dx * dy, d2 = dy * dy - dx * dx;
+  var e = M.x - (a * M.x + b * M.y), f = M.y - (b * M.x + d2 * M.y);
+  E.flap.style.transform = 'matrix(' + [a, b, b, d2, e, f].map(function(v){ return v.toFixed(5); }).join(',') + ')';
+  setClip(E.flap, polyCss(folded));
+  setClip(E.cast, polyCss(folded));
+  // light and shadow along the fold
+  var ang = Math.atan2(-nx, ny) * 180 / Math.PI;
+  var tf = 'translate(' + M.x.toFixed(1) + 'px,' + M.y.toFixed(1) + 'px) rotate(' + ang.toFixed(3) + 'deg) translate(-1600px,0)';
+  E.shade.style.transform = tf; E.castStrip.style.transform = tf;
+  var lift = Math.min(1, len / 160);
+  E.shade.style.opacity = (0.5 + 0.5 * lift).toFixed(3);
+  E.castStrip.style.opacity = lift.toFixed(3);
+  E.wrap.style.setProperty('--lift', lift.toFixed(3));
+}
+function pageCoords(x, y){
+  var r = book.getBoundingClientRect(), s = fit * zoom;
+  return { x: (x - r.left) / s, y: (y - r.top) / s };
+}
+/* dir 'fwd' turns the sheet away; 'back' brings an already-turned sheet back. */
+function startCurl(sheet, dir, corner){
+  var H = pageH(), Cy = corner === 'top' ? 0 : H;
+  var C = { x: PAGE_W, y: Cy }, home = dir === 'fwd' ? { x: C.x, y: C.y } : { x: -PAGE_W, y: Cy };
+  var E = curlLayer();
+  E.ink.innerHTML = '';
+  var paper = sheet.querySelector('.paper');
+  if (paper) { var ink = paper.cloneNode(true); copyCanvases(paper, ink); E.ink.appendChild(ink); }
+  E.root.classList.remove('fading');
+  sheet.classList.remove('turned');
+  sheet.style.zIndex = '60';
+  CURL = { sheet: sheet, dir: dir, C: C, P: { x: home.x, y: home.y }, T: { x: home.x, y: home.y }, V: { x: 0, y: 0 }, mode: 'drag', commitIdx: null };
+  drawCurl(CURL);
+  curlLoop();
+  return CURL;
+}
+function curlLoop(){
+  if (!CURL || CURL.raf) return;
+  var last = performance.now();
+  CURL.raf = requestAnimationFrame(function step(now){
+    var c = CURL; if (!c) return;
+    var dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)); last = now;
+    if (c.mode === 'drag') {
+      // the paper follows the finger with a touch of lag, like something with a little weight
+      var k = 1 - Math.exp(-dt * 26);
+      c.P.x += (c.T.x - c.P.x) * k; c.P.y += (c.T.y - c.P.y) * k;
+    } else if (c.mode === 'spring') {
+      var K = 190, damp = 2 * Math.sqrt(K) * 0.8;
+      c.V.x += (-K * (c.P.x - c.T.x) - damp * c.V.x) * dt; c.V.y += (-K * (c.P.y - c.T.y) - damp * c.V.y) * dt;
+      c.P.x += c.V.x * dt; c.P.y += c.V.y * dt;
+      if (Math.hypot(c.P.x - c.T.x, c.P.y - c.T.y) < 0.8 && Math.hypot(c.V.x, c.V.y) < 12) { c.P.x = c.T.x; c.P.y = c.T.y; c.done = true; }
+    } else if (c.mode === 'path') {
+      // a hand turning the page: the corner lifts in an arc as it crosses
+      var u = Math.min(1, (now - c.t0) / c.dur), s = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+      c.P.x = c.from.x + (c.to.x - c.from.x) * s;
+      c.P.y = c.from.y + (c.to.y - c.from.y) * s + (c.C.y === 0 ? 1 : -1) * Math.sin(Math.PI * s) * pageH() * 0.16;
+      if (u >= 1) c.done = true;
+    }
+    if (!c.done) constrainCorner(c.P, c.C);
+    drawCurl(c);
+    if (c.done) { endCurl(); return; }
+    c.raf = requestAnimationFrame(step);
+  });
+}
+function endCurl(){
+  var c = CURL; if (!c) return;
+  if (c.raf) cancelAnimationFrame(c.raf);
+  CURL = null;
+  var E = curlLayer();
+  setClip(c.sheet.firstChild, '');
+  c.sheet.style.zIndex = '';
+  var flappedAway = c.P.x < 0;           // the sheet ended up turned over, lying left of the spine
+  if (c.commitIdx != null) { idx = c.commitIdx; zoom = 1; panX = 0; panY = 0; apply(); }
+  paint();
+  if (flappedAway) {
+    E.root.classList.add('fading');
+    setTimeout(function(){ if (!CURL) { E.root.hidden = true; E.root.classList.remove('fading'); E.ink.innerHTML = ''; } }, 260);
+  } else { E.root.hidden = true; E.ink.innerHTML = ''; }
+}
+/* Finish whatever turn is in progress straight away (a new turn was asked for). */
+function finishCurl(){
+  var c = CURL; if (!c) return;
+  if (c.mode === 'path') { c.P.x = c.to.x; c.P.y = c.to.y; }
+  else if (c.mode === 'spring') { c.P.x = c.T.x; c.P.y = c.T.y; }
+  else { c.commitIdx = null; c.P.x = c.dir === 'fwd' ? c.C.x : -PAGE_W; c.P.y = c.C.y; }
+  endCurl();
+}
+/* Buttons, keys and corners: turn by one page with the curl. */
+function animateTurn(step){
+  finishCurl();
+  var reducedMotion = document.body.classList.contains('reduced');
+  if (reducedMotion || (step > 0 ? idx >= N - 1 : idx <= 0)) return false;
+  if (zoom > 1.02) { zoom = 1; panX = 0; panY = 0; glide(); apply(); }
+  var c, H = pageH();
+  if (step > 0) { c = startCurl(sheets[idx], 'fwd', 'bottom'); c.from = { x: PAGE_W, y: H }; c.to = { x: -PAGE_W, y: H }; c.commitIdx = idx + 1; }
+  else { c = startCurl(sheets[idx - 1], 'back', 'bottom'); c.from = { x: -PAGE_W, y: H }; c.to = { x: PAGE_W, y: H }; c.commitIdx = idx - 1; }
+  c.mode = 'path'; c.t0 = performance.now(); c.dur = 760;
+  return true;
+}
 
 function wireView(){
   prevBtn.addEventListener('click', function(){ go(-1); });
@@ -1352,34 +1508,52 @@ function wireView(){
 
   /* drag: turn the page by hand, pan when zoomed, pinch to zoom */
   var pts = {}, g = null, pinch = null;
+  /* Grab the page anywhere: the nearest corner (top or bottom) does the turning. */
   function beginTurn(dx){
-    if (dx < 0 && idx < N - 1) { g.sheet = sheets[idx]; g.mode = 'fwd'; }
-    else if (dx > 0 && idx > 0) { g.sheet = sheets[idx - 1]; g.mode = 'back'; }
-    else { g.mode = 'edge'; return; }
+    finishCurl();
+    var start = pageCoords(g.x, g.y), corner = start.y < pageH() / 2 ? 'top' : 'bottom';
+    if (dx < 0) {
+      if (idx < N - 1) g.mode = 'fwd';
+      else g.mode = 'edge';                                    // last page: a little give, then it springs back
+      var c = startCurl(sheets[idx], 'fwd', corner);
+      g.offset = { x: c.C.x - start.x, y: c.C.y - start.y };
+    } else if (dx > 0 && idx > 0) {
+      g.mode = 'back';
+      startCurl(sheets[idx - 1], 'back', corner);
+      g.start = start;
+    } else { g.mode = 'none'; return; }
     PZ.release();
-    g.sheet.style.transition = 'none'; g.sheet.style.opacity = '1'; g.sheet.style.zIndex = '60';
   }
-  function setAngle(a){
-    g.angle = a;
-    g.sheet.style.transform = 'rotateY(' + a.toFixed(2) + 'deg)';
-    g.sheet.style.setProperty('--shade', (Math.sin(-a * Math.PI / 180) * 0.9).toFixed(3));
+  function dragTurn(e){
+    var c = CURL; if (!c) return;
+    var p = pageCoords(e.clientX, e.clientY);
+    if (g.mode === 'back') { c.T.x = -PAGE_W + (p.x - g.start.x) * 2; c.T.y = c.C.y + (p.y - g.start.y); }
+    else {
+      c.T.x = p.x + g.offset.x; c.T.y = p.y + g.offset.y;
+      if (g.mode === 'edge') c.T.x = Math.max(c.T.x, PAGE_W - 90);
+    }
   }
   function endTurn(){
-    var progress = g.mode === 'fwd' ? -g.angle / 180 : 1 + g.angle / 180;
-    var flick = g.mode === 'fwd' ? g.vx < -0.35 : g.vx > 0.35;
-    var commit = progress > 0.33 || (flick && progress > 0.04), sh = g.sheet;
-    sh.style.transition = ''; void sh.offsetWidth;
-    sh.style.transform = ''; sh.style.opacity = ''; sh.style.removeProperty('--shade');
-    if (commit) { idx += g.mode === 'fwd' ? 1 : -1; zoom = 1; panX = 0; panY = 0; glide(); apply(); }
-    paint();
+    var c = CURL; if (!c) return;
+    if (performance.now() - g.lt > 90) g.vx = 0;              // held still before letting go: no flick
+    var commit;
+    if (g.mode === 'fwd') commit = c.P.x < PAGE_W * 0.3 || g.vx < -0.4;
+    else if (g.mode === 'back') commit = c.P.x > -PAGE_W * 0.3 || g.vx > 0.4;
+    else commit = false;
+    if (g.mode === 'back') c.T = commit ? { x: c.C.x, y: c.C.y } : { x: -PAGE_W, y: c.C.y };
+    else c.T = commit ? { x: -PAGE_W, y: c.C.y } : { x: c.C.x, y: c.C.y };
+    c.commitIdx = commit ? idx + (g.mode === 'back' ? -1 : 1) : null;
+    c.V = { x: g.vx * 1000 / (fit * zoom) * 0.5, y: 0 };      // carry the flick into the spring
+    c.mode = 'spring';
   }
   stage.addEventListener('pointerdown', function(e){
     if (e.button > 0) return;
-    if (!isEditing() && e.target.closest('[data-pz], button, input')) return;
+    var onButton = e.target.closest('button') && !e.target.closest('.corner');   // page corners are for grabbing
+    if (!isEditing() && (e.target.closest('[data-pz], input') || onButton)) return;
     pts[e.pointerId] = { x: e.clientX, y: e.clientY };
     var ids = Object.keys(pts);
     if (ids.length === 2) {
-      if (g && (g.mode === 'fwd' || g.mode === 'back')) endTurn();
+      if (g && (g.mode === 'fwd' || g.mode === 'back' || g.mode === 'edge')) endTurn();
       var a = pts[ids[0]], b = pts[ids[1]];
       pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom: zoom }; g = null; return;
     }
@@ -1400,20 +1574,18 @@ function wireView(){
       if (Math.abs(dx) + Math.abs(dy) < 6) return;
       try { stage.setPointerCapture(e.pointerId); } catch (err) {}
       if (zoom > 1.02) g.mode = 'pan';
-      else if (Math.abs(dx) > Math.abs(dy)) beginTurn(dx);
+      else if (Math.abs(dx) > Math.abs(dy) * 0.7) beginTurn(dx);
       else g.mode = 'none';
       g.dragged = true;
     }
-    var w = PAGE_W * fit * zoom;
     if (g.mode === 'pan') { panX = g.px + dx; panY = g.py + dy; stage.classList.add('grabbing'); apply(); }
-    else if (g.mode === 'fwd')  setAngle(Math.max(-179, Math.min(0, dx / w * 180)));
-    else if (g.mode === 'back') setAngle(Math.max(-179, Math.min(0, -179 + dx / w * 180)));
+    else if (g.mode === 'fwd' || g.mode === 'back' || g.mode === 'edge') dragTurn(e);
   });
   function release(e){
     delete pts[e.pointerId];
     if (pinch) { if (Object.keys(pts).length < 2) pinch = null; return; }
     if (!g) return;
-    if (g.mode === 'fwd' || g.mode === 'back') endTurn();
+    if (g.mode === 'fwd' || g.mode === 'back' || g.mode === 'edge') endTurn();
     if (g.dragged) { stage.__justDragged = true; setTimeout(function(){ stage.__justDragged = false; }, 0); }
     stage.classList.remove('grabbing');
     g = null;
