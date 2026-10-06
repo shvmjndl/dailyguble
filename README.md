@@ -258,25 +258,25 @@ static host can serve these files.
 
 **Setting it up (once):**
 
-The code and the website live in the same GitHub repository, on two branches:
+The code and the website live together on the `main` branch. The built website
+is the **`site/` folder**. The newsroom commits to that folder on every publish,
+so don't edit it by hand.
 
-- **`main`:** the source code. Work on it as normal.
-- **`site`:** only the built website files. The newsroom pushes here on every publish. Never edit it by hand.
-
-1. **Use the repository** that holds this code (it must have at least one commit). The newsroom creates the `site` branch on its first publish.
+1. **Use the repository** that holds this code.
 2. **Make a token.** On GitHub, go to Settings → Developer settings → Fine-grained tokens. Create one with access to **only this repository** and the permission **Contents: Read and write**.
 3. **Fill in `.env`:**
    ```
    GITHUB_REPO=your-name/dailyguble
    GITHUB_TOKEN=github_pat_...
-   GITHUB_BRANCH=site
+   GITHUB_BRANCH=main
+   GITHUB_DIR=site
    SITE_URL=https://dailyguble.pages.dev
    ```
-4. **Connect a free host to the repository's `site` branch.** Pick one:
-   - **Cloudflare Pages:** create a project from the repository. Set the production branch to **`site`**, framework **None**, no build command, and leave the output folder empty. Unlimited traffic on the free plan.
-   - **Netlify:** import the repository, with branch **`site`** and no build command.
-   - **Vercel:** import the repository, production branch **`site`**, framework **Other**, no build command. The free plan is non-commercial only.
-   - **GitHub Pages:** in the repository, go to Settings → Pages and deploy from the **`site`** branch.
+4. **Connect a free host to the repository's `site/` folder.** Pick one:
+   - **Cloudflare Pages:** create a project from the repository. Set the production branch to **`main`**, framework **None**, no build command, and build output directory **`site`**. Unlimited traffic on the free plan.
+   - **Netlify:** import the repository, with no build command and publish directory **`site`**.
+   - **Vercel:** import the repository, framework **Other**, no build command, output directory **`site`**. The free plan is non-commercial only.
+   - **GitHub Pages:** GitHub Pages can only serve the top of a branch or a `docs/` folder. Set `GITHUB_DIR=docs` and choose that folder in Settings → Pages.
 5. **Restart the newsroom.** It publishes the current edition on start.
 
 **After that:**
@@ -284,6 +284,7 @@ The code and the website live in the same GitHub repository, on two branches:
 - **Every Publish edition** commits the paper to the repository, and the host puts it online within a minute or two.
 - **Uploads are small:** only files that changed are sent, so a normal day is one small file.
 - **The Edition tab** shows when the last push happened, or why it failed, and has a **Publish the website now** button.
+- **Before pushing code changes,** run `git pull`. The newsroom adds a commit to `main` every time it publishes.
 - **The newsroom** only needs to be running while you edit, on your laptop or a small server.
 
 **No GitHub?** The same files are written to the `site` folder in your data
@@ -357,8 +358,8 @@ work well.
 | `HISTORY_KEEP` | How many published editions to keep | `60` |
 | `GITHUB_REPO` | Repository the public website is pushed to, as `owner/name` | (off) |
 | `GITHUB_TOKEN` | Fine-grained token for that repository only (Contents: read and write) | (off) |
-| `GITHUB_BRANCH` | Branch the website files are pushed to (keep the code on `main`) | `main`; this project uses `site` |
-| `GITHUB_DIR` | Folder inside the repository, if not the top | (top) |
+| `GITHUB_BRANCH` | Branch the website files are pushed to | `main` |
+| `GITHUB_DIR` | Folder in the repository the website goes into | (top); this project uses `site` |
 | `GITHUB_AUTHOR_NAME` / `GITHUB_AUTHOR_EMAIL` | Name and email on the newsroom's website commits | your GitHub account's |
 | `GITHUB_API_URL` | Only for GitHub Enterprise | `https://api.github.com` |
 | `SITE_URL` | The public website's address, shown as a link in the newsroom | (none) |
