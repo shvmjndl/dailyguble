@@ -78,7 +78,7 @@ async function writeSite(dir, files) {
 /* ---------------- GitHub ---------------- */
 const gitBlobSha = (buf) => crypto.createHash('sha1').update(`blob ${buf.length}\0`).update(buf).digest('hex');
 
-async function pushToGitHub(files, { token, repo, branch = 'main', dir = '', message, api = 'https://api.github.com' }) {
+async function pushToGitHub(files, { token, repo, branch = 'main', dir = '', message, api = 'https://api.github.com', author = null }) {
   if (!/^[\w.-]+\/[\w.-]+$/.test(repo || '')) throw new Error('GITHUB_REPO must look like owner/name');
   const base = `${api.replace(/\/+$/, '')}/repos/${repo}`;
   async function gh(p, init = {}) {
@@ -100,6 +100,8 @@ async function pushToGitHub(files, { token, repo, branch = 'main', dir = '', mes
     }
     return body;
   }
+  // Who the commits are by; without this GitHub uses the token owner's account email.
+  const signed = (c) => (author && author.name && author.email ? Object.assign(c, { author, committer: author }) : c);
   const prefix = dir ? dir.replace(/^\/+|\/+$/g, '') + '/' : '';
   let ref;
   try { ref = await gh(`/git/ref/heads/${encodeURIComponent(branch)}`); }
@@ -113,7 +115,7 @@ async function pushToGitHub(files, { token, repo, branch = 'main', dir = '', mes
       tree.push({ path: prefix + f.path, mode: '100644', type: 'blob', sha: blob.sha });
     }
     const t = await gh('/git/trees', { method: 'POST', body: JSON.stringify({ tree }) });
-    const c = await gh('/git/commits', { method: 'POST', body: JSON.stringify({ message, tree: t.sha, parents: [] }) });
+    const c = await gh('/git/commits', { method: 'POST', body: JSON.stringify(signed({ message, tree: t.sha, parents: [] })) });
     await gh('/git/refs', { method: 'POST', body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: c.sha }) });
     return { commit: c.sha, changed: files.length };
   }
@@ -128,7 +130,7 @@ async function pushToGitHub(files, { token, repo, branch = 'main', dir = '', mes
     tree.push({ path: prefix + f.path, mode: '100644', type: 'blob', sha: blob.sha });
   }
   const newTree = await gh('/git/trees', { method: 'POST', body: JSON.stringify({ base_tree: head.tree.sha, tree }) });
-  const commit = await gh('/git/commits', { method: 'POST', body: JSON.stringify({ message, tree: newTree.sha, parents: [head.sha] }) });
+  const commit = await gh('/git/commits', { method: 'POST', body: JSON.stringify(signed({ message, tree: newTree.sha, parents: [head.sha] })) });
   await gh(`/git/refs/heads/${encodeURIComponent(branch)}`, { method: 'PATCH', body: JSON.stringify({ sha: commit.sha }) });
   return { commit: commit.sha, changed: changed.length };
 }

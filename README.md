@@ -359,6 +359,7 @@ work well.
 | `GITHUB_TOKEN` | Fine-grained token for that repository only (Contents: read and write) | (off) |
 | `GITHUB_BRANCH` | Branch the website files are pushed to (keep the code on `main`) | `main`; this project uses `site` |
 | `GITHUB_DIR` | Folder inside the repository, if not the top | (top) |
+| `GITHUB_AUTHOR_NAME` / `GITHUB_AUTHOR_EMAIL` | Name and email on the newsroom's website commits | your GitHub account's |
 | `GITHUB_API_URL` | Only for GitHub Enterprise | `https://api.github.com` |
 | `SITE_URL` | The public website's address, shown as a link in the newsroom | (none) |
 | `SITE_DIR` | Where the website files are written | `data/site` |

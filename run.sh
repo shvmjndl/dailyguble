@@ -78,6 +78,10 @@ if [[ "$MODE" == "node" ]]; then
     ADMIN_USERNAME="$USERNAME" \
     ADMIN_PASSWORD_HASH="$(env_get ADMIN_PASSWORD_HASH)" \
     HISTORY_KEEP="$(env_get HISTORY_KEEP)" \
+    GITHUB_REPO="$(env_get GITHUB_REPO)" GITHUB_TOKEN="$(env_get GITHUB_TOKEN)" \
+    GITHUB_BRANCH="$(env_get GITHUB_BRANCH)" GITHUB_DIR="$(env_get GITHUB_DIR)" GITHUB_API_URL="$(env_get GITHUB_API_URL)" \
+    GITHUB_AUTHOR_NAME="$(env_get GITHUB_AUTHOR_NAME)" GITHUB_AUTHOR_EMAIL="$(env_get GITHUB_AUTHOR_EMAIL)" \
+    SITE_URL="$(env_get SITE_URL)" \
     COOKIE_SECURE=false TRUST_PROXY=false \
     HOST=127.0.0.1 PORT="$PORT" DATA_DIR="$PWD/data" \
     node server.js

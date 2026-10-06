@@ -46,7 +46,8 @@ const HISTORY_KEEP = Math.max(5, Number(env.HISTORY_KEEP) || 60);
 /* The public website: built as static files on every publish, and pushed to GitHub if configured. */
 const SITE_DIR = path.resolve(env.SITE_DIR || path.join(DATA_DIR, 'site'));
 const SITE_URL = (env.SITE_URL || '').trim();
-const GITHUB = { token: (env.GITHUB_TOKEN || '').trim(), repo: (env.GITHUB_REPO || '').trim(), branch: (env.GITHUB_BRANCH || 'main').trim(), dir: (env.GITHUB_DIR || '').trim(), api: (env.GITHUB_API_URL || 'https://api.github.com').trim() };
+const GITHUB = { token: (env.GITHUB_TOKEN || '').trim(), repo: (env.GITHUB_REPO || '').trim(), branch: (env.GITHUB_BRANCH || 'main').trim(), dir: (env.GITHUB_DIR || '').trim(), api: (env.GITHUB_API_URL || 'https://api.github.com').trim(),
+  author: env.GITHUB_AUTHOR_NAME && env.GITHUB_AUTHOR_EMAIL ? { name: env.GITHUB_AUTHOR_NAME.trim(), email: env.GITHUB_AUTHOR_EMAIL.trim() } : null };
 const PUSH_ENABLED = !!(GITHUB.token && GITHUB.repo);
 
 const SESSION_IDLE_MS = 2 * 60 * 60 * 1000;      // signed out after 2 hours idle
