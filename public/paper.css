@@ -38,23 +38,23 @@ body{
 }
 
 /* ---------- stage, sheet mechanics ---------- */
-.stage{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;perspective:2800px;perspective-origin:50% 45%;touch-action:none}
+.stage{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;touch-action:none}
 .stage.grabbing{cursor:grabbing}
 .stage.pannable{cursor:grab}
-.book{position:absolute;left:50%;top:50%;width:800px;height:1120px;transform-style:preserve-3d;will-change:transform}
+.book{position:absolute;left:50%;top:50%;width:800px;height:1120px;will-change:transform}
 .book.folding{transition:height .5s cubic-bezier(.3,.8,.2,1)}
 .book.folded{overflow:hidden}
 .stack{position:absolute;inset:0;z-index:0}
 .stack i{position:absolute;inset:0;background:var(--paper);box-shadow:0 1px 0 rgba(0,0,0,.35)}
-.stack i:nth-child(1){transform:translate(5px,6px) rotate(.35deg);filter:brightness(.9)}
-.stack i:nth-child(2){transform:translate(9px,11px) rotate(-.5deg);filter:brightness(.82)}
+.stack i:nth-child(1){transform:translate(5px,6px) rotate(.35deg);background:color-mix(in srgb, var(--paper) 90%, #000)}
+.stack i:nth-child(2){transform:translate(9px,11px) rotate(-.5deg);background:color-mix(in srgb, var(--paper) 82%, #000)}
 .sheet{position:absolute;left:0;top:0;width:800px;height:1120px}
 .sheet.turned{visibility:hidden;pointer-events:none}
 .face{position:absolute;left:0;top:0;width:800px;height:1120px;backface-visibility:hidden;overflow:hidden;
   background:var(--paper);
   box-shadow:0 20px 44px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.25),inset 0 0 110px rgba(120,96,56,.2)}
 .verso{display:none}
-.grain{position:absolute;inset:0;pointer-events:none;z-index:6;mix-blend-mode:multiply;
+.grain{position:absolute;inset:0;pointer-events:none;z-index:6;
   background-image:
     repeating-linear-gradient(23deg, rgba(104,84,48,.055) 0 1px, rgba(0,0,0,0) 1px 4px),
     repeating-linear-gradient(-67deg, rgba(104,84,48,.045) 0 1px, rgba(0,0,0,0) 1px 5px)}
@@ -150,7 +150,7 @@ hr.thick{border:0;border-top:3px double var(--ink);margin:0}
 
 .cut{margin:0}
 .cut .frame{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:var(--rule);border:1px solid var(--ink-soft);max-width:100%}
-.cut .frame::after{content:"";position:absolute;inset:0;mix-blend-mode:multiply;opacity:.62;
+.cut .frame::after{content:"";position:absolute;inset:0;opacity:.55;
   background-image:radial-gradient(circle at 50% 50%, rgba(23,21,15,.92) .9px, rgba(0,0,0,0) 1.25px);
   background-size:3px 3px}
 .cut figcaption{font-family:var(--f-util);font-size:9px;line-height:1.35;color:var(--ink-soft);padding-top:3px;text-align:left}
@@ -366,7 +366,7 @@ button.ctl.read:hover{background:linear-gradient(#a33322,#7c2418)}
 .reader-sheet{position:relative;max-width:680px;margin:0 auto;padding:30px clamp(20px,5vw,48px) 36px;color:var(--ink);font-family:var(--f-body);
   background:var(--paper);box-shadow:0 18px 50px rgba(0,0,0,.55),inset 0 0 90px rgba(120,96,56,.16);
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.reader-sheet::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;
+.reader-sheet::after{content:"";position:absolute;inset:0;pointer-events:none;
   background-image:repeating-linear-gradient(23deg, rgba(104,84,48,.05) 0 1px, rgba(0,0,0,0) 1px 4px)}
 .reader-section{font:700 14px/1.3 var(--f-util);color:var(--press-red);margin:0 0 12px;padding-bottom:7px;border-bottom:1px solid var(--rule)}
 .reader-sheet p{font-size:clamp(17px,2.5vw,19px);line-height:1.62;text-align:left;hyphens:manual;-webkit-hyphens:manual;margin:0 0 .85em}
@@ -435,7 +435,7 @@ body.editing .reader-sheet{user-select:text}
   background-image:linear-gradient(rgba(255,252,240,.18),rgba(255,252,240,.18)),
     repeating-linear-gradient(23deg, rgba(104,84,48,.05) 0 1px, rgba(0,0,0,0) 1px 4px);
   box-shadow:inset 0 0 120px rgba(120,96,56,.22)}
-.curl-ink{position:absolute;inset:0;opacity:.11;filter:grayscale(1) blur(.5px);pointer-events:none}
+.curl-ink{position:absolute;inset:0;opacity:.1;filter:grayscale(1);pointer-events:none}
 .curl-ink .paper{z-index:auto}
 .curl-strip{position:absolute;left:0;top:0;width:3200px;transform-origin:0 0;pointer-events:none}
 /* where the paper bends: a dark crease, a bright curve, then it flattens out */
@@ -444,3 +444,11 @@ body.editing .reader-sheet{user-select:text}
   rgba(30,22,10,.07) 52%, rgba(30,22,10,0) 100%)}
 /* shadow cast on the page underneath, darkest right at the fold */
 .curl-cast-strip{height:150px;background:linear-gradient(to bottom, rgba(20,12,4,.42) 0, rgba(20,12,4,.18) 18%, rgba(20,12,4,.05) 55%, rgba(20,12,4,0) 100%)}
+
+/* ---------- performance ---------- */
+/* Each page is a self-contained box: edits inside it never make the browser re-check the rest. */
+.paper{contain:layout style paint}
+/* Pages hidden under the next page aren't drawn at all. */
+.sheet.buried{visibility:hidden}
+/* Phones: skip the blurred shadow under the turning page (the fold shadows stay). */
+@media (pointer:coarse){ .curl-flap-wrap{filter:none} }

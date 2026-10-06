@@ -31,14 +31,35 @@ function plainTitle(issue) {
   return escapeHtml(name.replace(/&amp;/g, '&').replace(/&[a-z]+;/gi, ' ').trim() || 'The Daily Guble');
 }
 
-/* assets: { template, readerJs, paperCss, favicon, manifest (object), icon192, icon512, appleIcon } */
-function buildSite(issue, assets) {
+/* Uploaded photos live in the edition as data: URLs. On the public site each one becomes
+   its own file, named by its content, so the page stays small and browsers cache photos forever. */
+function extractImages(issue) {
+  const files = [], seen = new Set(), copy = JSON.parse(JSON.stringify(issue));
+  (function walk(o) {
+    if (Array.isArray(o)) return o.forEach(walk);
+    if (!o || typeof o !== 'object') return;
+    for (const k of Object.keys(o)) {
+      const v = o[k], m = k === 'src' && typeof v === 'string' && v.match(/^data:image\/(png|jpe?g|webp|gif);base64,([A-Za-z0-9+/=]+)$/);
+      if (m) {
+        const buf = Buffer.from(m[2], 'base64'), name = `img/${crypto.createHash('sha1').update(buf).digest('hex').slice(0, 16)}.${m[1] === 'jpeg' ? 'jpg' : m[1]}`;
+        if (!seen.has(name)) { seen.add(name); files.push({ path: name, data: buf }); }
+        o[k] = name;
+      } else walk(v);
+    }
+  })(copy);
+  return { issue: copy, files };
+}
+
+/* assets: { template, fonts, readerJs, paperCss, favicon, manifest (object), icon192, icon512, appleIcon } */
+function buildSite(rawIssue, assets) {
+  const { issue, files: images } = extractImages(rawIssue);
   const version = crypto.createHash('sha1').update(assets.readerJs).update(assets.paperCss).digest('hex').slice(0, 10);
   const manifest = Object.assign({}, assets.manifest, {
     start_url: './', scope: './',
     icons: assets.manifest.icons.map((i) => Object.assign({}, i, { src: i.src.replace(/^\//, '') }))
   });
-  const index = fill(assets.template, { TITLE: plainTitle(issue), ISSUE: scriptSafe(JSON.stringify(issue)), CSP: escapeHtml(SITE_CSP), V: version });
+  const fonts = assets.fonts || { href: '', list: '' };
+  const index = fill(assets.template, { TITLE: plainTitle(issue), ISSUE: scriptSafe(JSON.stringify(issue)), CSP: escapeHtml(SITE_CSP), V: version, FONTS: escapeHtml(fonts.href), FONTLIST: escapeHtml(fonts.list) });
   const headers = [
     '/*',
     '  X-Content-Type-Options: nosniff',
@@ -50,6 +71,15 @@ function buildSite(issue, assets) {
     '  Cache-Control: no-cache',
     '/index.html',
     '  Cache-Control: no-cache',
+    // the page asks for paper.js?v=<hash>, so a new version is a new address: cache the files for a year
+    '/paper.js',
+    '  Cache-Control: public, max-age=31536000, immutable',
+    '/paper.css',
+    '  Cache-Control: public, max-age=31536000, immutable',
+    '/img/*',
+    '  Cache-Control: public, max-age=31536000, immutable',
+    '/*.png',
+    '  Cache-Control: public, max-age=604800',
     ''
   ].join('\n');
   return [
@@ -63,7 +93,7 @@ function buildSite(issue, assets) {
     { path: 'apple-touch-icon.png', data: assets.appleIcon },
     { path: '_headers', data: Buffer.from(headers) },       // Cloudflare Pages and Netlify read this
     { path: '.nojekyll', data: Buffer.from('') }             // GitHub Pages: serve files as they are
-  ];
+  ].concat(images);
 }
 
 async function writeSite(dir, files) {

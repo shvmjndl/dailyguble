@@ -22,6 +22,8 @@ const fsp = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { promisify } = require('node:util');
+const zlib = require('node:zlib');
+const vm = require('node:vm');
 const { buildSite, writeSite, pushToGitHub, DATA_SOURCES } = require('./publish');
 
 const scrypt = promisify(crypto.scrypt);
@@ -224,21 +226,36 @@ function sendText(res, status, text) {
   res.end(text);
 }
 function sendHtml(res, html, cache) {
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': cache || 'no-cache' });
+  const headers = { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': cache || 'no-cache', Vary: 'Accept-Encoding' };
+  if (res.__gzip) { headers['Content-Encoding'] = 'gzip'; res.writeHead(200, headers); return res.end(zlib.gzipSync(html, { level: 6 })); }
+  res.writeHead(200, headers);
   res.end(html);
 }
 function sendAsset(req, res, asset, cache) {
   if (req.headers['if-none-match'] === asset.etag) { res.writeHead(304, { ETag: asset.etag, 'Cache-Control': cache }); return res.end(); }
-  res.writeHead(200, { 'Content-Type': asset.type, ETag: asset.etag, 'Cache-Control': cache });
-  res.end(req.method === 'HEAD' ? undefined : asset.body);
+  const headers = { 'Content-Type': asset.type, ETag: asset.etag, 'Cache-Control': cache, Vary: 'Accept-Encoding' };
+  const gz = res.__gzip && asset.gz;
+  if (gz) headers['Content-Encoding'] = 'gzip';
+  res.writeHead(200, headers);
+  res.end(req.method === 'HEAD' ? undefined : (gz ? asset.gz : asset.body));
 }
 
 /* ---------------- pages and bundles ---------------- */
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 const readBin = (p) => fs.readFileSync(path.join(ROOT, p));
+/* Theme data (presets and typefaces) is shared with the browser code. */
+const THEMES = (() => { const ctx = {}; vm.runInNewContext(read('src/themes.js'), ctx); return ctx; })();
+function fontInfo(issue) {
+  const t = THEMES.themeOf(issue), fams = [...new Set(THEMES.FONT_ROLES.map((r) => t.fonts[r[0]]))];
+  return { href: THEMES.fontsHref(fams), list: fams.join('|') };
+}
 const VIEWS = { reader: read('views/reader.html'), admin: read('views/admin.html'), login: read('views/login.html'), site: read('views/site.html') };
-function asset(body, type) { return { body, type, etag: '"' + crypto.createHash('sha1').update(body).digest('base64url') + '"' }; }
-const bundle = (...files) => '(function(){"use strict";\n' + files.map(read).join('\n') + '\n})();\n';
+function asset(body, type) {
+  const a = { body, type, etag: '"' + crypto.createHash('sha1').update(body).digest('base64url') + '"' };
+  if (/text|javascript|json|svg|manifest/.test(type)) a.gz = zlib.gzipSync(body, { level: 9 });   // compressed once, at start-up
+  return a;
+}
+const bundle = (...files) => '(function(){"use strict";\n' + ['src/themes.js'].concat(files).map(read).join('\n') + '\n})();\n';
 const PUBLIC_ASSETS = {
   '/paper.css': asset(read('public/paper.css'), 'text/css; charset=utf-8'),
   '/paper.js': asset(bundle('src/core.js', 'src/almanac.js', 'src/reader.js'), 'text/javascript; charset=utf-8'),
@@ -279,7 +296,7 @@ function checkLocation(l) {
 let siteStatus = { url: SITE_URL || null, pushConfigured: PUSH_ENABLED, repo: PUSH_ENABLED ? GITHUB.repo : null, last: null };
 function siteFiles() {
   return buildSite(live.issue, {
-    template: VIEWS.site, readerJs: PUBLIC_ASSETS['/paper.js'].body, paperCss: PUBLIC_ASSETS['/paper.css'].body,
+    fonts: fontInfo(live.issue), template: VIEWS.site, readerJs: PUBLIC_ASSETS['/paper.js'].body, paperCss: PUBLIC_ASSETS['/paper.css'].body,
     favicon: PUBLIC_ASSETS['/favicon.svg'].body, manifest: JSON.parse(PUBLIC_ASSETS['/manifest.webmanifest'].body),
     icon192: PUBLIC_ASSETS['/icon-192.png'].body, icon512: PUBLIC_ASSETS['/icon-512.png'].body, appleIcon: PUBLIC_ASSETS['/apple-touch-icon.png'].body
   });
@@ -427,6 +444,7 @@ async function handleLogin(req, res) {
 /* ---------------- routes ---------------- */
 async function route(req, res) {
   baseHeaders(res);
+  res.__gzip = /\bgzip\b/.test(req.headers['accept-encoding'] || '');
   const url = new URL(req.url, 'http://local');
   const p = url.pathname, m = req.method;
 
@@ -434,13 +452,15 @@ async function route(req, res) {
 
   if (m === 'GET' || m === 'HEAD') {
     if (p === '/') {
-      return sendHtml(res, fill(VIEWS.reader, { TITLE: paperTitle(), ISSUE: scriptSafe(live.json) }));
+      const f = fontInfo(live.issue);
+      return sendHtml(res, fill(VIEWS.reader, { TITLE: paperTitle(), ISSUE: scriptSafe(live.json), FONTS: escapeHtml(f.href), FONTLIST: escapeHtml(f.list) }));
     }
     if (PUBLIC_ASSETS[p]) return sendAsset(req, res, PUBLIC_ASSETS[p], 'no-cache');
     if (p === '/admin' || p === '/admin/') {
       const s = getSession(req);
       if (!s) return sendHtml(res, fill(VIEWS.login, { TITLE: paperTitle() }), 'no-store');
-      return sendHtml(res, fill(VIEWS.admin, { TITLE: paperTitle(), ISSUE: scriptSafe(live.json), CSRF: s.csrf, VERSION: String(live.version) }), 'no-store');
+      const f = fontInfo(live.issue);
+      return sendHtml(res, fill(VIEWS.admin, { TITLE: paperTitle(), ISSUE: scriptSafe(live.json), FONTS: escapeHtml(f.href), FONTLIST: escapeHtml(f.list), CSRF: s.csrf, VERSION: String(live.version) }), 'no-store');
     }
     if (ADMIN_ASSETS[p]) {
       if (!getSession(req)) return sendText(res, 404, 'Not found');

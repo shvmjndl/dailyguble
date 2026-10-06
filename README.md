@@ -449,14 +449,15 @@ The **Edition** tab can also download the current edition as a file and load one
 
 - **`server.js`** is the newsroom server. It handles the sign-in page and sessions, serves the editor to signed-in editors, saves editions and history, and publishes the website. It also serves a preview of the paper at `/`.
 - **`publish.js`** builds the public website files and pushes only the changed ones to GitHub.
-- **Browser code:** the server wraps the files in `src/` into two script bundles. `paper.js` is for readers (`core.js` + `almanac.js` + `reader.js`). The editor's bundle is `core.js` + `almanac.js` + `editor.js`.
+- **Browser code:** the server wraps the files in `src/` into two script bundles. `paper.js` is for readers (`themes.js` + `core.js` + `almanac.js` + `reader.js`). The editor's bundle swaps `reader.js` for `editor.js`. The server also reads `themes.js` itself, to put the right fonts in each page's head.
 
 ### Project layout
 
 ```
 server.js               newsroom server: sign-in, sessions, saving, history, publishing
 publish.js              builds the static website; pushes changed files to GitHub
-src/core.js             the paper: rendering, page turns, zoom, fold, story reader, puzzles, live codes
+src/themes.js           theme presets, typefaces and colours (shared with the server)
+src/core.js             the paper: rendering, page curl, zoom, fold, story reader, puzzles, live codes
 src/almanac.js          date, sun and moon maths; fetches tides (NOAA) and weather (NWS / Open-Meteo)
 src/reader.js           starts the reader's bundle
 src/editor.js           the newsroom editor (signed-in editors only)
@@ -501,6 +502,19 @@ Every block has a `type` (such as `article`, `photo`, `box`, `crossword` or
 `weather`) plus that type's fields. The newsroom is the easiest way to edit
 editions, and the History tab and **Backup** downloads give you the JSON if you
 want to look at it.
+
+### Performance
+
+- **Drawing:**
+  - Only the current page and its neighbours are drawn.
+  - Pages are boxed off with CSS containment, so a change inside one page never makes the browser re-check the others.
+  - No blend modes or 3D are used. Phones skip the blurred shadow under a turning page.
+- **Live data:** new weather, tides or a new day update only the words and live blocks that change, never a full redraw.
+- **Loading:**
+  - Fonts are linked in the page's head, so they start downloading right away.
+  - Uploaded photos are published as separate files named after their content.
+  - The script and styles are cached for a year (a new version gets a new address).
+  - The newsroom server sends everything gzip-compressed. Cloudflare compresses the public site itself.
 
 ### Limits
 
